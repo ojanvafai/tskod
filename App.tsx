@@ -78,12 +78,86 @@ interface AppProps {
 
 }
 
+let ACCESS_TOKEN = 'FILL THIS IN';
+
+const defaultheader = function () {
+  return {
+    method: null,
+    body: null,
+    crossDomain: true,
+    cache: false,
+    async: false,
+    timeout: 3000,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "",
+      "Accept": "*/*",
+      "Access-Control-Allow-Headers": "*",
+      "X-Requested-With": "XMLHttpRequest"
+    },
+  };
+};
+function transformRequest(obj: any) {
+  var str = [];
+  for (var p in obj)
+    str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
+  return str.join("&");
+}
+const getContacts = () => {
+  const header: any = defaultheader();
+  let params = {
+    "alt": "json",
+    "max-results": 100
+  };
+  header.method = 'GET';
+  let url = "https://www.google.com/m8/feeds/contacts/default/full?";
+  var suburl = transformRequest(params);
+  url = url + suburl;
+  header.headers["Authorization"] = 'Bearer ' + ACCESS_TOKEN;
+  fetch(url, header)
+    .then((response) => {
+      setTimeout(() => { let a = 0; }, 0);
+      return response.json()
+    })
+    .then((responseJson) => {
+      console.log("responseJson=", responseJson);
+    })
+    .catch((error) => {
+      console.log("An error occurred.Please try again", error);
+    });
+}
+
+function getThreads() {
+  const header: any = defaultheader();
+  let params = {
+    "alt": "json",
+    "max-results": 100
+  };
+  header.method = 'GET';
+  let url = "https://gmail.googleapis.com/gmail/v1/users/me/threads";
+  var suburl = transformRequest(params);
+  url = url + "?" + suburl;
+  header.headers["Authorization"] = 'Bearer ' + ACCESS_TOKEN;
+  fetch(url, header)
+    .then((response) => {
+      console.log(response);
+      return response.json()
+    })
+    .then((responseJson) => {
+      console.log("responseJson=", responseJson);
+    })
+    .catch((error) => {
+      console.log("An error occurred.Please try again", error);
+    });
+}
+
 class App extends React.Component {
-  constructor(props : AppProps) {
+  constructor(props: AppProps) {
     super(props);
     //GoogleSignin.configure();
     GoogleSignin.configure({
-      scopes: ['https://www.googleapis.com/auth/gmail.modify'], 
+      scopes: ['https://www.googleapis.com/auth/gmail.modify',
+        "https://www.googleapis.com/auth/contacts.readonly"],
       webClientId: '957024671877-pmopl7t9j5vtieu207p56slhr7h1pkui.apps.googleusercontent.com', // client ID of type WEB for your server (needed to verify user ID and offline access)
       // offlineAccess: true, // if you want to access Google API on behalf of the user FROM YOUR SERVER
       //hostedDomain: '', // specifies a hosted domain restriction
@@ -97,7 +171,10 @@ class App extends React.Component {
     try {
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
+      ACCESS_TOKEN = (await GoogleSignin.getTokens()).accessToken;
       this.setState({ userInfo });
+      //getContacts();
+      getThreads();
       console.log(this.state)
     } catch (error) {
       console.log("FAILED");
@@ -115,7 +192,7 @@ class App extends React.Component {
   }
   render() {
     return (
-      <>
+      <React.Fragment>
         <StatusBar barStyle="dark-content" />
         <GoogleSigninButton
           style={{ width: 192, height: 48 }}
@@ -128,11 +205,7 @@ class App extends React.Component {
             contentInsetAdjustmentBehavior="automatic"
             style={styles.scrollView}>
             <Header />
-            {global.HermesInternal == null ? null : (
-              <View style={styles.engine}>
-                <Text style={styles.footer}>Engine: Hermes</Text>
-              </View>
-            )}
+            {global.HermesInternal == null ? null : <View style={styles.engine}><Text style={styles.footer}>Engine: Hermes</Text></View>}
             <View style={styles.body}>
               <View style={styles.sectionContainer}>
                 <Text style={styles.sectionTitle}>Step One</Text>
@@ -156,15 +229,38 @@ class App extends React.Component {
                 <Text style={styles.sectionTitle}>Learn More</Text>
                 <Text style={styles.sectionDescription}>
                   Read the docs to discover what to do next:
-                </Text>
+                        </Text>
               </View>
               <LearnMoreLinks />
             </View>
           </ScrollView>
         </SafeAreaView>
-      </>
+      </React.Fragment>
     );
   };
 };
 
-export default App;
+export default App; 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
