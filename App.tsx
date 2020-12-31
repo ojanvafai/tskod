@@ -17,6 +17,7 @@ import {
   Text,
   StatusBar,
   LogBox,
+  AppState,
 } from 'react-native';
 
 import {
@@ -142,10 +143,24 @@ async function getThreads() : Promise<gapi.client.gmail.ListThreadsResponse> {
   return response.json() as gapi.client.gmail.ListThreadsResponse;
 }
 
-class App extends React.Component {
+interface CardProps {
+  snippet: string,
+}
+
+class Card extends React.Component<CardProps> {
+  render() {
+    return <View><Text>{this.props.snippet}</Text></View>;
+  }
+}
+
+interface TeaMailAppState {
+  userInfo: any|null;
+  threads: gapi.client.gmail.Thread[]|undefined;
+}
+
+class App extends React.Component<AppProps, TeaMailAppState> {
   constructor(props: AppProps) {
     super(props);
-    //GoogleSignin.configure();
     GoogleSignin.configure({
       scopes: ['https://www.googleapis.com/auth/gmail.modify',
         "https://www.googleapis.com/auth/contacts.readonly"],
@@ -157,16 +172,21 @@ class App extends React.Component {
       //accountName: '', // [Android] specifies an account name on the device that should be used
       //iosClientId: '<FROM DEVELOPER CONSOLE>', // [iOS] optional, if you want to specify the client ID of type iOS (otherwise, it is taken from GoogleService-Info.plist)
     });
+    this.state = {
+      userInfo: null,
+      threads: undefined,
+    };
+  }
+  componentDidMount() {
+    this._signIn();
   }
   _signIn = async () => {
     try {
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
       ACCESS_TOKEN = (await GoogleSignin.getTokens()).accessToken;
-      this.setState({ userInfo });
-      //getContacts();
-      console.log((await getThreads()).threads);
-      console.log(this.state)
+      const threads = (await getThreads()).threads;
+      this.setState({ userInfo, threads });
     } catch (error) {
       console.log("FAILED");
       console.log(JSON.stringify(error))
@@ -182,82 +202,23 @@ class App extends React.Component {
     }
   }
   render() {
+    const threads = this.state.threads;
     return (
       <React.Fragment>
-        <StatusBar barStyle="dark-content" />
-        <GoogleSigninButton
-          style={{ width: 192, height: 48 }}
-          size={GoogleSigninButton.Size.Wide}
-          color={GoogleSigninButton.Color.Dark}
-          onPress={this._signIn}
-          disabled={false/*this.state.isSigninInProgress*/} />
+        <StatusBar barStyle="light-content" />
         <SafeAreaView>
-          <ScrollView
-            contentInsetAdjustmentBehavior="automatic"
-            style={styles.scrollView}>
-            <Header />
-            {global.HermesInternal == null ? null : <View style={styles.engine}><Text style={styles.footer}>Engine: Hermes</Text></View>}
-            <View style={styles.body}>
-              <View style={styles.sectionContainer}>
-                <Text style={styles.sectionTitle}>Step One</Text>
-                <Text style={styles.sectionDescription}>
-                  Edit <Text style={styles.highlight}>App.tsx</Text> Test 3.
-                </Text>
-              </View>
-              <View style={styles.sectionContainer}>
-                <Text style={styles.sectionTitle}>See Your Changes</Text>
-                <Text style={styles.sectionDescription}>
-                  <ReloadInstructions />
-                </Text>
-              </View>
-              <View style={styles.sectionContainer}>
-                <Text style={styles.sectionTitle}>Debug</Text>
-                <Text style={styles.sectionDescription}>
-                  <DebugInstructions />
-                </Text>
-              </View>
-              <View style={styles.sectionContainer}>
-                <Text style={styles.sectionTitle}>Learn More</Text>
-                <Text style={styles.sectionDescription}>
-                  Read the docs to discover what to do next:
-                        </Text>
-              </View>
-              <LearnMoreLinks />
-            </View>
-          </ScrollView>
+          <GoogleSigninButton
+            style={{ width: 192, height: 48 }}
+            size={GoogleSigninButton.Size.Wide}
+            color={GoogleSigninButton.Color.Dark}
+            onPress={this._signIn}
+            disabled={false/*this.state.isSigninInProgress*/} />
+          {threads && <Card snippet={threads[0].snippet as string} />}
         </SafeAreaView>
       </React.Fragment>
     );
   };
 };
 
+
 export default App; 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
