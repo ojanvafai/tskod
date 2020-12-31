@@ -127,7 +127,7 @@ const getContacts = () => {
     });
 }
 
-function getThreads() {
+async function getThreads() : Promise<gapi.client.gmail.ListThreadsResponse> {
   const header: any = defaultheader();
   let params = {
     "alt": "json",
@@ -138,17 +138,8 @@ function getThreads() {
   var suburl = transformRequest(params);
   url = url + "?" + suburl;
   header.headers["Authorization"] = 'Bearer ' + ACCESS_TOKEN;
-  fetch(url, header)
-    .then((response) => {
-      console.log(response);
-      return response.json()
-    })
-    .then((responseJson) => {
-      console.log("responseJson=", responseJson);
-    })
-    .catch((error) => {
-      console.log("An error occurred.Please try again", error);
-    });
+  const response = await fetch(url, header);
+  return response.json() as gapi.client.gmail.ListThreadsResponse;
 }
 
 class App extends React.Component {
@@ -174,7 +165,7 @@ class App extends React.Component {
       ACCESS_TOKEN = (await GoogleSignin.getTokens()).accessToken;
       this.setState({ userInfo });
       //getContacts();
-      getThreads();
+      console.log((await getThreads()).threads);
       console.log(this.state)
     } catch (error) {
       console.log("FAILED");
@@ -241,6 +232,12 @@ class App extends React.Component {
 };
 
 export default App; 
+
+ 
+
+ 
+
+ 
 
  
 
