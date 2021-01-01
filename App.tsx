@@ -99,7 +99,7 @@ const getContacts = () => {
     });
 }
 
-async function getThreads() : Promise<gapi.client.gmail.ListThreadsResponse> {
+async function getThreads(): Promise<gapi.client.gmail.ListThreadsResponse> {
   const header: any = defaultheader();
   let params = {
     "alt": "json",
@@ -120,9 +120,9 @@ interface CardProps {
 
 class Card extends React.Component<CardProps> {
   render() {
-    let cardStyle = { 
-      margin: 15, 
-      padding: 4, 
+    let cardStyle = {
+      margin: 15,
+      padding: 4,
       /*borderWidth: 1, */
       shadowColor: "#000",
       shadowOffset: {
@@ -141,8 +141,8 @@ class Card extends React.Component<CardProps> {
 }
 
 interface TeaMailAppState {
-  userInfo: any|null;
-  threads: gapi.client.gmail.Thread[]|undefined;
+  userInfo: any | null;
+  threads: gapi.client.gmail.Thread[] | undefined;
 }
 
 class App extends React.Component<AppProps, TeaMailAppState> {
@@ -157,7 +157,7 @@ class App extends React.Component<AppProps, TeaMailAppState> {
       //loginHint: '', // [iOS] The user's ID, or email address, to be prefilled in the authentication UI if possible. [See docs here](https://developers.google.com/identity/sign-in/ios/api/interface_g_i_d_sign_in.html#a0a68c7504c31ab0b728432565f6e33fd)
       //forceCodeForRefreshToken: true, // [Android] related to `serverAuthCode`, read the docs link below *.
       //accountName: '', // [Android] specifies an account name on the device that should be used
-      //iosClientId: '<FROM DEVELOPER CONSOLE>', // [iOS] optional, if you want to specify the client ID of type iOS (otherwise, it is taken from GoogleService-Info.plist)
+      iosClientId: '957024671877-4eu314jmn3c60neao556ltfa025u9ao3.apps.googleusercontent.com', // [iOS] optional, if you want to specify the client ID of type iOS (otherwise, it is taken from GoogleService-Info.plist)
     });
     this.state = {
       userInfo: null,
@@ -207,5 +207,18 @@ class App extends React.Component<AppProps, TeaMailAppState> {
   };
 };
 
+export default App;
 
-export default App; 
+// iOS firebase needs the following swift bits hooked up
+// import UIKit
+// import Firebase
+// @UIApplicationMain
+// class AppDelegate: UIResponder, UIApplicationDelegate {
+//   var window: UIWindow?
+//   func application(_ application: UIApplication,
+//     didFinishLaunchingWithOptions launchOptions:
+//       [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+//     FirebaseApp.configure()
+//     return true
+//   }
+// } 
