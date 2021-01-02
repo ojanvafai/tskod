@@ -34,6 +34,8 @@ import {
   statusCodes,
 } from '@react-native-community/google-signin';
 
+import { Card } from './Card';
+
 declare const global: { HermesInternal: null | {} };
 
 const styles = StyleSheet.create({
@@ -112,32 +114,6 @@ async function getThreads(): Promise<gapi.client.gmail.ListThreadsResponse> {
   header.headers["Authorization"] = 'Bearer ' + ACCESS_TOKEN;
   const response = await fetch(url, header);
   return response.json() as gapi.client.gmail.ListThreadsResponse;
-}
-
-interface CardProps {
-  snippet: string,
-}
-
-class Card extends React.Component<CardProps> {
-  render() {
-    let cardStyle = {
-      margin: 15,
-      padding: 4,
-      /*borderWidth: 1, */
-      shadowColor: "#000",
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
-      shadowOpacity: 0.32,
-      shadowRadius: 5.46,
-      backgroundColor: Colors.white,
-      elevation: 9,
-    };
-    return <View style={cardStyle}>
-      <Text>{this.props.snippet}</Text>
-    </View>;
-  }
 }
 
 interface TeaMailAppState {
