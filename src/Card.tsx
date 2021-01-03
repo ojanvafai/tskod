@@ -12,7 +12,6 @@ export class Card extends React.Component<CardProps> {
     pan = new Animated.ValueXY();
     panResponder = PanResponder.create({
         onMoveShouldSetPanResponder: () => {
-            console.log("Starting pan.")
             return true;
         },
         onPanResponderMove: Animated.event([
@@ -29,10 +28,7 @@ export class Card extends React.Component<CardProps> {
         }
     });
     render() {
-        console.log("RENDER");
         let cardStyle = {
-            width: 100,
-            height: 100,
             margin: 15,
             padding: 4,
             /*borderWidth: 1, */
