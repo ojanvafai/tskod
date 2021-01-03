@@ -1,31 +1,12 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * Generated with the TypeScript template
- * https://github.com/react-native-community/react-native-template-typescript
- *
- * @format
- */
-
 import React from 'react';
 import {
   SafeAreaView,
   StyleSheet,
-  ScrollView,
-  View,
-  Text,
   StatusBar,
-  LogBox,
-  AppState,
 } from 'react-native';
 
 import {
-  Header,
-  LearnMoreLinks,
   Colors,
-  DebugInstructions,
-  ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
 import {
@@ -35,8 +16,7 @@ import {
 } from '@react-native-community/google-signin';
 
 import { Card } from './Card';
-
-declare const global: { HermesInternal: null | {} };
+import { Gapi } from './Gapi';
 
 const styles = StyleSheet.create({
   engine: {
@@ -48,72 +28,7 @@ const styles = StyleSheet.create({
   },
 });
 
-interface AppProps {
-
-}
-
-let ACCESS_TOKEN = 'FILL THIS IN';
-
-const defaultheader = function () {
-  return {
-    method: null,
-    body: null,
-    crossDomain: true,
-    cache: false,
-    async: false,
-    timeout: 3000,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "",
-      "Accept": "*/*",
-      "Access-Control-Allow-Headers": "*",
-      "X-Requested-With": "XMLHttpRequest"
-    },
-  };
-};
-function transformRequest(obj: any) {
-  var str = [];
-  for (var p in obj)
-    str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
-  return str.join("&");
-}
-const getContacts = () => {
-  const header: any = defaultheader();
-  let params = {
-    "alt": "json",
-    "max-results": 100
-  };
-  header.method = 'GET';
-  let url = "https://www.google.com/m8/feeds/contacts/default/full?";
-  var suburl = transformRequest(params);
-  url = url + suburl;
-  header.headers["Authorization"] = 'Bearer ' + ACCESS_TOKEN;
-  fetch(url, header)
-    .then((response) => {
-      setTimeout(() => { let a = 0; }, 0);
-      return response.json()
-    })
-    .then((responseJson) => {
-      console.log("responseJson=", responseJson);
-    })
-    .catch((error) => {
-      console.log("An error occurred.Please try again", error);
-    });
-}
-
-async function getThreads(): Promise<gapi.client.gmail.ListThreadsResponse> {
-  const header: any = defaultheader();
-  let params = {
-    "alt": "json",
-    "max-results": 100
-  };
-  header.method = 'GET';
-  let url = "https://gmail.googleapis.com/gmail/v1/users/me/threads";
-  var suburl = transformRequest(params);
-  url = url + "?" + suburl;
-  header.headers["Authorization"] = 'Bearer ' + ACCESS_TOKEN;
-  const response = await fetch(url, header);
-  return response.json() as gapi.client.gmail.ListThreadsResponse;
+interface TeaMailAppProps {
 }
 
 interface TeaMailAppState {
@@ -121,9 +36,20 @@ interface TeaMailAppState {
   threads: gapi.client.gmail.Thread[] | undefined;
 }
 
-class App extends React.Component<AppProps, TeaMailAppState> {
-  constructor(props: AppProps) {
+class App extends React.Component<TeaMailAppProps, TeaMailAppState> {
+  constructor(props: TeaMailAppProps) {
     super(props);
+    this.state = {
+      userInfo: null,
+      threads: undefined,
+    };
+  }
+
+  componentDidMount() {
+    this._signIn();
+  }
+
+  _signIn = async () => {
     GoogleSignin.configure({
       scopes: ['https://www.googleapis.com/auth/gmail.modify',
         "https://www.googleapis.com/auth/contacts.readonly"],
@@ -135,20 +61,13 @@ class App extends React.Component<AppProps, TeaMailAppState> {
       //accountName: '', // [Android] specifies an account name on the device that should be used
       iosClientId: '957024671877-4eu314jmn3c60neao556ltfa025u9ao3.apps.googleusercontent.com', // [iOS] optional, if you want to specify the client ID of type iOS (otherwise, it is taken from GoogleService-Info.plist)
     });
-    this.state = {
-      userInfo: null,
-      threads: undefined,
-    };
-  }
-  componentDidMount() {
-    this._signIn();
-  }
-  _signIn = async () => {
+
+    await GoogleSignin.hasPlayServices();
+
     try {
-      await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
-      ACCESS_TOKEN = (await GoogleSignin.getTokens()).accessToken;
-      const threads = (await getThreads()).threads;
+      Gapi.saveAccessToken((await GoogleSignin.getTokens()).accessToken);
+      const threads = (await Gapi.fetchThreads()).threads;
       this.setState({ userInfo, threads });
     } catch (error) {
       console.log("FAILED");
@@ -164,6 +83,7 @@ class App extends React.Component<AppProps, TeaMailAppState> {
       }
     }
   }
+
   render() {
     const threads = this.state.threads;
     return (
@@ -184,17 +104,3 @@ class App extends React.Component<AppProps, TeaMailAppState> {
 };
 
 export default App;
-
-// iOS firebase needs the following swift bits hooked up
-// import UIKit
-// import Firebase
-// @UIApplicationMain
-// class AppDelegate: UIResponder, UIApplicationDelegate {
-//   var window: UIWindow?
-//   func application(_ application: UIApplication,
-//     didFinishLaunchingWithOptions launchOptions:
-//       [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-//     FirebaseApp.configure()
-//     return true
-//   }
-// } 
