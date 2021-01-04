@@ -90,12 +90,6 @@ class App extends React.Component<TeaMailAppProps, TeaMailAppState> {
       <React.Fragment>
         <StatusBar barStyle="light-content" />
         <SafeAreaView>
-          <GoogleSigninButton
-            style={{ width: 192, height: 48 }}
-            size={GoogleSigninButton.Size.Wide}
-            color={GoogleSigninButton.Color.Dark}
-            onPress={this._signIn}
-            disabled={false/*this.state.isSigninInProgress*/} />
           {threads && <Card snippet={threads[0].snippet as string} />}
         </SafeAreaView>
       </React.Fragment>
