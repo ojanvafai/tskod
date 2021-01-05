@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -30,23 +30,10 @@ const styles = StyleSheet.create({
 interface TeaMailAppProps {
 }
 
-interface TeaMailAppState {
-  threads: gapi.client.gmail.Thread[] | undefined;
-}
+function App(props: TeaMailAppProps) {
+  const [threads, setThreads] = useState([] as gapi.client.gmail.Thread[]);
 
-class App extends React.Component<TeaMailAppProps, TeaMailAppState> {
-  constructor(props: TeaMailAppProps) {
-    super(props);
-    this.state = {
-      threads: undefined,
-    };
-  }
-
-  componentDidMount() {
-    this._signIn();
-  }
-
-  _signIn = async () => {
+  const _signIn = async () => {
     GoogleSignin.configure({
       scopes: ['https://www.googleapis.com/auth/gmail.modify',
         "https://www.googleapis.com/auth/contacts.readonly"],
@@ -87,21 +74,24 @@ class App extends React.Component<TeaMailAppProps, TeaMailAppState> {
 
     Gapi.saveAccessToken((await GoogleSignin.getTokens()).accessToken);
 
-    const threads = (await Gapi.fetchThreads()).threads;
-    this.setState({ threads });
+    const fetchedThreads = (await Gapi.fetchThreads()).threads;
+    if (fetchedThreads) {
+      setThreads(fetchedThreads);
+    }
   }
 
-  render() {
-    const threads = this.state.threads;
-    return (
-      <React.Fragment>
-        <StatusBar barStyle="light-content" />
-        <SafeAreaView>
-          {threads && <Card threadId={threads[0].id as string} snippet={threads[0].snippet as string} />}
-        </SafeAreaView>
-      </React.Fragment>
-    );
-  };
+  useEffect(() => {
+    _signIn();
+  }, []);
+
+  return (
+    <React.Fragment>
+      <StatusBar barStyle="light-content" />
+      <SafeAreaView>
+        {threads.length ? <Card threadId={threads[0].id as string} snippet={threads[0].snippet as string} /> : undefined}
+      </SafeAreaView>
+    </React.Fragment>
+  );
 };
 
 export default App;
