@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Text, Animated } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
-import { PanGestureHandler } from 'react-native-gesture-handler'
+import { PanGestureHandler, State } from 'react-native-gesture-handler'
 import { Gapi } from './Gapi';
 
 
@@ -28,6 +28,17 @@ export function Card(props: CardProps) {
         useNativeDriver: true,
     });
 
+    let handleGestureStateChange = (evt:any) => {
+        if (evt.nativeEvent.state == State.END) {
+            pan.setValue({x:0, y:0})
+            if(evt.nativeEvent.translationX < -150) {
+                console.log("Swipe left")
+            } else if(evt.nativeEvent.translationX > 150) {
+                console.log("Swipe right")
+            }
+        } 
+    }
+
     //handleGesture = (evt : any) => {console.log(evt.nativeEvent)}
     let cardStyle = {
         margin: 15,
@@ -42,10 +53,10 @@ export function Card(props: CardProps) {
         shadowRadius: 5.46,
         backgroundColor: Colors.white,
         elevation: 9,
-        transform: [{ translateX: pan.x }, { translateY: pan.y }]
+        transform: [{ translateX: pan.x }]
     };
 
-    return <PanGestureHandler onGestureEvent={handleGesture}>
+    return <PanGestureHandler onGestureEvent={handleGesture}  onHandlerStateChange={handleGestureStateChange}>
         <Animated.View style={cardStyle}>
             <Text>{props.snippet}</Text>
             {messages.length ? messages.map(x => <Text>MessageID: {x.id}</Text>) : undefined}
