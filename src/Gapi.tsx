@@ -31,13 +31,20 @@ function fetchContacts() {
   return fetchJson("https://www.google.com/m8/feeds/contacts/default/full");
 }
 
+const THREADS_URL = "https://gmail.googleapis.com/gmail/v1/users/me/threads";
+
 function fetchThreads(): Promise<gapi.client.gmail.ListThreadsResponse> {
-  return fetchJson("https://gmail.googleapis.com/gmail/v1/users/me/threads");
+  return fetchJson(THREADS_URL);
+}
+
+function fetchMessages(threadId: string): Promise<gapi.client.gmail.Thread> {
+  return fetchJson(`${THREADS_URL}/${threadId}`);
 }
 
 let out = {
   saveAccessToken,
   fetchContacts,
   fetchThreads,
+  fetchMessages,
 };
 export { out as Gapi };

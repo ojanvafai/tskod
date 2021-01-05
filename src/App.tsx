@@ -11,7 +11,6 @@ import {
 
 import {
   GoogleSignin,
-  GoogleSigninButton,
   statusCodes,
 } from '@react-native-community/google-signin';
 
@@ -98,7 +97,7 @@ class App extends React.Component<TeaMailAppProps, TeaMailAppState> {
       <React.Fragment>
         <StatusBar barStyle="light-content" />
         <SafeAreaView>
-          {threads && <Card snippet={threads[0].snippet as string} />}
+          {threads && <Card threadId={threads[0].id as string} snippet={threads[0].snippet as string} />}
         </SafeAreaView>
       </React.Fragment>
     );
