@@ -8,10 +8,11 @@ function encodeParameters(url: string, obj: { [property: string]: string | numbe
   return `${url}?${Object.entries(obj).map(p => `${encodeURIComponent(p[0])}=${encodeURIComponent(p[1])}`).join("&")}`;
 }
 
-async function fetchJson(url: string) {
+async function fetchJson<T>({ url, postBody, queryParameters }: { url: string, postBody?: T, queryParameters?: { [property: string]: string } }) {
   const fullUrl = encodeParameters(url, {
     "alt": "json",
-    "max-results": 100
+    "max-results": 100,
+    ...queryParameters,
   });
 
   const headers = new Headers({
@@ -23,28 +24,54 @@ async function fetchJson(url: string) {
   });
   headers.set("Authorization", 'Bearer ' + accessToken);
 
-  const response = await fetch(fullUrl, { method: 'GET', headers });
+  const options: RequestInit = { headers };
+  if (postBody) {
+    options.method = 'POST';
+    options.body = JSON.stringify(postBody);
+  } else {
+    options.method = 'GET';
+  }
+  const response = await fetch(fullUrl, options);
   return response.json();
 }
 
 function fetchContacts() {
-  return fetchJson("https://www.google.com/m8/feeds/contacts/default/full");
+  return fetchJson({ url: "https://www.google.com/m8/feeds/contacts/default/full" });
 }
 
-const THREADS_URL = "https://gmail.googleapis.com/gmail/v1/users/me/threads";
+const GMAIL_BASE_URL = "https://gmail.googleapis.com/gmail/v1/users/me";
+const THREADS_URL = `${GMAIL_BASE_URL}/threads`;
+const MESSAGES_URL = `${GMAIL_BASE_URL}/messages`;
 
 function fetchThreads(): Promise<gapi.client.gmail.ListThreadsResponse> {
-  return fetchJson(THREADS_URL);
+  return fetchJson({ url: THREADS_URL, queryParameters: { q: 'in:inbox' } });
 }
 
 function fetchMessages(threadId: string): Promise<gapi.client.gmail.Thread> {
-  return fetchJson(`${THREADS_URL}/${threadId}`);
+  return fetchJson({ url: `${THREADS_URL}/${threadId}` });
 }
 
-let out = {
+interface BatchModifyData {
+  "ids": string[];
+  "addLabelIds": string[];
+  "removeLabelIds": string[];
+}
+
+function archiveMessages(messageIds: string[]) {
+  return fetchJson<BatchModifyData>({
+    url: `${MESSAGES_URL}/batchModify`,
+    postBody: {
+      "ids": messageIds,
+      "addLabelIds": [],
+      "removeLabelIds": ['INBOX'],
+    }
+  });
+}
+
+export {
   saveAccessToken,
   fetchContacts,
   fetchThreads,
   fetchMessages,
+  archiveMessages,
 };
-export { out as Gapi };

@@ -15,7 +15,7 @@ import {
 } from '@react-native-community/google-signin';
 
 import { Card } from './Card';
-import { Gapi } from './Gapi';
+import { fetchThreads, saveAccessToken } from './Gapi';
 
 const styles = StyleSheet.create({
   engine: {
@@ -72,9 +72,9 @@ function App(props: TeaMailAppProps) {
       }
     }
 
-    Gapi.saveAccessToken((await GoogleSignin.getTokens()).accessToken);
+    saveAccessToken((await GoogleSignin.getTokens()).accessToken);
 
-    const fetchedThreads = (await Gapi.fetchThreads()).threads;
+    const fetchedThreads = (await fetchThreads()).threads;
     if (fetchedThreads) {
       setThreads(fetchedThreads);
     }
