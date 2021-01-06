@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Text, Animated } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
-import { PanGestureHandler, State } from 'react-native-gesture-handler'
+import { 
+    PanGestureHandler, 
+    State, 
+    GestureHandlerStateChangeEvent, 
+    GestureHandlerGestureEventNativeEvent, 
+    PanGestureHandlerEventExtra 
+} from 'react-native-gesture-handler'
 import { archiveMessages, fetchMessages } from './Gapi';
 
 
@@ -26,7 +32,7 @@ function defined(variable: any) {
 }
 
 const MIN_PAN_FOR_ACTION = 150;
-const SPRING_CONFIG = {tension: 20, friction: 7};
+const SPRING_CONFIG = { tension: 20, friction: 7 };
 
 export function Card(props: CardProps) {
     let pan = new Animated.ValueXY();
@@ -46,27 +52,28 @@ export function Card(props: CardProps) {
         useNativeDriver: true,
     });
 
-    let handleGestureStateChange = async (evt: any /*TODO: GestureHandlerStateChangeEvent*/ ) => {
+    let handleGestureStateChange = async (evt: GestureHandlerStateChangeEvent) => {
+        const nativeEvent = evt.nativeEvent as unknown as GestureHandlerGestureEventNativeEvent & PanGestureHandlerEventExtra;
         if (evt.nativeEvent.state == State.END) {
-            if (Math.abs(evt.nativeEvent.translationX) < MIN_PAN_FOR_ACTION &&
-                Math.abs(evt.nativeEvent.translationY) < MIN_PAN_FOR_ACTION) {
+            if (Math.abs(nativeEvent.translationX) < MIN_PAN_FOR_ACTION &&
+                Math.abs(nativeEvent.translationY) < MIN_PAN_FOR_ACTION) {
                 Animated.spring(pan, {
                     ...SPRING_CONFIG,
-                    toValue: {x: 0, y: 0},
-                    velocity: evt.nativeEvent.velocityX,
+                    toValue: { x: 0, y: 0 },
+                    velocity: nativeEvent.velocityX,
                     useNativeDriver: true
                 }).start()
             } else {
                 pan.setValue({ x: 0, y: 0 })
-            }
-            if (evt.nativeEvent.translationX < -MIN_PAN_FOR_ACTION) {
-                if (!messages.length) {
-                    // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
-                    assertNotReached('Have not loaded message data yet.')
+                if (nativeEvent.translationX < -MIN_PAN_FOR_ACTION) {
+                    if (!messages.length) {
+                        // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
+                        assertNotReached('Have not loaded message data yet.')
+                    }
+                    await archiveMessages(messages.map(x => defined(x.id)));
+                } else if (nativeEvent.translationX > MIN_PAN_FOR_ACTION) {
+                    console.log("Swipe right")
                 }
-                await archiveMessages(messages.map(x => defined(x.id)));
-            } else if (evt.nativeEvent.translationX > MIN_PAN_FOR_ACTION) {
-                console.log("Swipe right")
             }
         }
     }
