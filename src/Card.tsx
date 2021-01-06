@@ -25,6 +25,9 @@ function defined(variable: any) {
     return variable;
 }
 
+const MIN_PAN_FOR_ACTION = 150;
+const SPRING_CONFIG = {tension: 20, friction: 7};
+
 export function Card(props: CardProps) {
     let pan = new Animated.ValueXY();
 
@@ -43,16 +46,26 @@ export function Card(props: CardProps) {
         useNativeDriver: true,
     });
 
-    let handleGestureStateChange = async (evt: any) => {
+    let handleGestureStateChange = async (evt: any /*TODO: GestureHandlerStateChangeEvent*/ ) => {
         if (evt.nativeEvent.state == State.END) {
-            pan.setValue({ x: 0, y: 0 })
-            if (evt.nativeEvent.translationX < -150) {
+            if (Math.abs(evt.nativeEvent.translationX) < MIN_PAN_FOR_ACTION &&
+                Math.abs(evt.nativeEvent.translationY) < MIN_PAN_FOR_ACTION) {
+                Animated.spring(pan, {
+                    ...SPRING_CONFIG,
+                    toValue: {x: 0, y: 0},
+                    velocity: evt.nativeEvent.velocityX,
+                    useNativeDriver: true
+                }).start()
+            } else {
+                pan.setValue({ x: 0, y: 0 })
+            }
+            if (evt.nativeEvent.translationX < -MIN_PAN_FOR_ACTION) {
                 if (!messages.length) {
                     // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
                     assertNotReached('Have not loaded message data yet.')
                 }
                 await archiveMessages(messages.map(x => defined(x.id)));
-            } else if (evt.nativeEvent.translationX > 150) {
+            } else if (evt.nativeEvent.translationX > MIN_PAN_FOR_ACTION) {
                 console.log("Swipe right")
             }
         }
