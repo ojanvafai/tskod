@@ -43,6 +43,7 @@ export function Card(props: CardProps): JSX.Element {
   const [messages, setMessages] = useState([] as gapi.client.gmail.Message[]);
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async (): Promise<void> => {
       const messageData = await fetchMessages(props.threadId);
       if (messageData.messages !== undefined) {

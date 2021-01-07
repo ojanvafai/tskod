@@ -7,8 +7,10 @@ module.exports = {
     'prettier',
   ],
   parser: '@typescript-eslint/parser',
+  parserOptions: {project: './tsconfig.json'},
   plugins: ['@typescript-eslint'],
   rules: {
+    '@typescript-eslint/no-floating-promises': 'error',
     'require-await': 'error',
     'no-return-await': 'error',
   },

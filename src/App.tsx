@@ -63,6 +63,7 @@ function App(): JSX.Element {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     _signIn();
   }, []);
 
