@@ -11,11 +11,11 @@ export function saveAccessToken(token: string): void {
 
 function encodeParameters(
   url: string,
-  obj: { [property: string]: string | number }
+  obj: {[property: string]: string | number},
 ): string {
   return `${url}?${Object.entries(obj)
     .map((p) => `${encodeURIComponent(p[0])}=${encodeURIComponent(p[1])}`)
-    .join("&")}`;
+    .join('&')}`;
 }
 
 async function fetchJson<T>({
@@ -25,46 +25,46 @@ async function fetchJson<T>({
 }: {
   url: string;
   postBody?: T;
-  queryParameters?: { [property: string]: string };
+  queryParameters?: {[property: string]: string};
 }): Promise<Json> {
   const fullUrl = encodeParameters(url, {
-    alt: "json",
-    "max-results": 100,
+    alt: 'json',
+    'max-results': 100,
     ...queryParameters,
   });
 
   const headers = new Headers({
-    "Content-Type": "application/json",
-    Authorization: "",
-    Accept: "*/*",
-    "Access-Control-Allow-Headers": "*",
-    "X-Requested-With": "XMLHttpRequest",
+    'Content-Type': 'application/json',
+    Authorization: '',
+    Accept: '*/*',
+    'Access-Control-Allow-Headers': '*',
+    'X-Requested-With': 'XMLHttpRequest',
   });
-  headers.set("Authorization", "Bearer " + accessToken);
+  headers.set('Authorization', 'Bearer ' + accessToken);
 
-  const options: RequestInit = { headers };
+  const options: RequestInit = {headers};
   if (postBody) {
-    options.method = "POST";
+    options.method = 'POST';
     options.body = JSON.stringify(postBody);
   } else {
-    options.method = "GET";
+    options.method = 'GET';
   }
   const response = await fetch(fullUrl, options);
   return response.json();
 }
 
-const GMAIL_BASE_URL = "https://gmail.googleapis.com/gmail/v1/users/me";
+const GMAIL_BASE_URL = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const THREADS_URL = `${GMAIL_BASE_URL}/threads`;
 const MESSAGES_URL = `${GMAIL_BASE_URL}/messages`;
 
 export function fetchThreads(): Promise<gapi.client.gmail.ListThreadsResponse> {
-  return fetchJson({ url: THREADS_URL, queryParameters: { q: "in:inbox" } });
+  return fetchJson({url: THREADS_URL, queryParameters: {q: 'in:inbox'}});
 }
 
 export function fetchMessages(
-  threadId: string
+  threadId: string,
 ): Promise<gapi.client.gmail.Thread> {
-  return fetchJson({ url: `${THREADS_URL}/${threadId}` });
+  return fetchJson({url: `${THREADS_URL}/${threadId}`});
 }
 
 interface BatchModifyData {
@@ -80,7 +80,7 @@ export function archiveMessages(messageIds: string[]): Promise<Json> {
     postBody: {
       ids: messageIds,
       addLabelIds: [],
-      removeLabelIds: ["INBOX"],
+      removeLabelIds: ['INBOX'],
     },
   });
 }
