@@ -72,10 +72,7 @@ function App(): JSX.Element {
       <StatusBar barStyle="light-content" />
       <SafeAreaView>
         {threads.length ? (
-          <Card
-            threadId={threads[0].id as string}
-            snippet={threads[0].snippet as string}
-          />
+          <Card threadId={threads[0].id as string} />
         ) : undefined}
       </SafeAreaView>
     </React.Fragment>

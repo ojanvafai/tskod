@@ -8,30 +8,13 @@ import {
   State,
 } from 'react-native-gesture-handler';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
+import {assertNotReached, defined} from './Base';
 
 import {archiveMessages, fetchMessages} from './Gapi';
+import {Message} from './Message';
 
 interface CardProps {
-  snippet: string;
   threadId: string;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function assert(predicate: any, message?: string): void {
-  if (!predicate) {
-    throw new Error(message ?? 'This should never happen.');
-  }
-}
-
-function assertNotReached(message?: string): void {
-  assert(false, message);
-}
-
-function defined<T>(variable: T | undefined): T {
-  if (variable === undefined) {
-    throw new Error('This should never happen.');
-  }
-  return variable;
 }
 
 const MIN_PAN_FOR_ACTION = 150;
@@ -40,14 +23,14 @@ const SPRING_CONFIG = {tension: 20, friction: 7};
 export function Card(props: CardProps): JSX.Element {
   const pan = new Animated.ValueXY();
 
-  const [messages, setMessages] = useState([] as gapi.client.gmail.Message[]);
+  const [messages, setMessages] = useState([] as Message[]);
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async (): Promise<void> => {
       const messageData = await fetchMessages(props.threadId);
       if (messageData.messages !== undefined) {
-        setMessages(messageData.messages);
+        setMessages(messageData.messages.map((x) => new Message(x)));
       }
     })();
   }, [props.threadId]);
@@ -110,10 +93,12 @@ export function Card(props: CardProps): JSX.Element {
       onGestureEvent={handleGesture}
       onHandlerStateChange={handleGestureStateChange}>
       <Animated.View style={cardStyle}>
-        <Text>{props.snippet}</Text>
-        {messages.length
-          ? messages.map((x) => <Text>MessageID: {x.id}</Text>)
-          : undefined}
+        {messages.length ? (
+          <Text>
+            {messages[0].subject}
+            {'\n'}({messages.length} messages)
+          </Text>
+        ) : undefined}
       </Animated.View>
     </PanGestureHandler>
   );
