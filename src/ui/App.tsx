@@ -4,9 +4,16 @@ import {SafeAreaView, StatusBar} from 'react-native';
 import {GoogleSignin, statusCodes} from '@react-native-community/google-signin';
 
 import {Card} from './Card';
-import {fetchThreads, saveAccessToken} from '../Gapi';
+import {archiveMessages, fetchThreads, saveAccessToken} from '../Gapi';
+import {Message} from '../Message';
+import {defined} from '../Base';
+
+export interface ThreadActions {
+  archive: (messages: Message[]) => Promise<Response>;
+}
 
 function App(): JSX.Element {
+  const [threadIndex, setThreadIndex] = useState(0);
   const [threads, setThreads] = useState([] as gapi.client.gmail.Thread[]);
 
   const _signIn = async (): Promise<void> => {
@@ -62,6 +69,13 @@ function App(): JSX.Element {
     }
   };
 
+  const threadActions: ThreadActions = {
+    archive: (messages: Message[]) => {
+      setThreadIndex(threadIndex + 1);
+      return archiveMessages(messages.map((x) => defined(x.id)));
+    },
+  };
+
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     _signIn();
@@ -73,8 +87,11 @@ function App(): JSX.Element {
     <React.Fragment>
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={viewStyle}>
-        {threads.length ? (
-          <Card threadId={threads[0].id as string} />
+        {threadIndex < threads.length ? (
+          <Card
+            threadId={threads[threadIndex].id as string}
+            actions={threadActions}
+          />
         ) : undefined}
       </SafeAreaView>
     </React.Fragment>

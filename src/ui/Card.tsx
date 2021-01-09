@@ -8,14 +8,16 @@ import {
   State,
 } from 'react-native-gesture-handler';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import {assertNotReached, defined} from '../Base';
+import {assertNotReached} from '../Base';
 
-import {archiveMessages, fetchMessages} from '../Gapi';
+import {fetchMessages} from '../Gapi';
 import {Message} from '../Message';
+import {ThreadActions} from './App';
 import {MessageComponent} from './MessageComponent';
 
 interface CardProps {
   threadId: string;
+  actions: ThreadActions;
 }
 
 const MIN_PAN_FOR_ACTION = 150;
@@ -67,7 +69,7 @@ export function Card(props: CardProps): JSX.Element {
             assertNotReached('Have not loaded message data yet.');
           }
           console.log('Start archive');
-          await archiveMessages(messages.map((x) => defined(x.id)));
+          await props.actions.archive(messages);
           console.log('End archive');
         } else if (nativeEvent.translationX > MIN_PAN_FOR_ACTION) {
           console.log('Swipe right');
