@@ -2,6 +2,7 @@ import {Message} from '../Message';
 
 import React from 'react';
 import {Text} from 'react-native';
+import {WebView} from 'react-native-webview';
 
 export function MessageComponent(props: {message: Message}): JSX.Element {
   const message = props.message;
@@ -28,7 +29,7 @@ export function MessageComponent(props: {message: Message}): JSX.Element {
       )}
       {message.date}
       {'\n\n'}
-      {message.getHtmlOrPlain()}
+      <WebView source={{html: message.getHtmlOrPlain()}} />
     </Text>
   );
 }

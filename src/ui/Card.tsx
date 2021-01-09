@@ -91,7 +91,7 @@ export function Card(props: CardProps): JSX.Element {
 
   const subject = messages.length && <Text>{messages[0].subject}</Text>;
   const messageComponents = messages.map((x) => (
-    <MessageComponent message={x} />
+    <MessageComponent key={x.id} message={x} />
   ));
 
   return (

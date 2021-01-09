@@ -1,4 +1,5 @@
 import {defined} from './Base';
+import {decode} from './Base64Url';
 
 export class Message {
   private _rawMessage: gapi.client.gmail.Message;
@@ -93,21 +94,23 @@ export class Message {
       return;
     }
 
-    if (!payload.body) {
+    const data = payload.body?.data;
+    if (!data) {
       return;
     }
 
-    const data = payload.body.data;
+    const decoded = decode(data);
+    console.log(data, decoded);
     const mimeType = payload.mimeType;
 
     // TODO: There's probably more mime types we need to handle.
     // TODO: Need to url base64 decode this
     switch (mimeType) {
       case 'text/plain':
-        this._plain = data;
+        this._plain = decoded;
         break;
       case 'text/html':
-        this._html = data;
+        this._html = decoded;
         break;
     }
   }
