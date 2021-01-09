@@ -1,15 +1,22 @@
 import React, {useEffect, useState} from 'react';
-import {SafeAreaView, StatusBar} from 'react-native';
+import {SafeAreaView, StatusBar, Text} from 'react-native';
 
 import {GoogleSignin, statusCodes} from '@react-native-community/google-signin';
 
 import {Card} from './Card';
-import {archiveMessages, fetchThreads, saveAccessToken} from '../Gapi';
+import {
+  archiveMessages,
+  fetchThreads,
+  applyLabelToMessages,
+  saveAccessToken,
+} from '../Gapi';
 import {Message} from '../Message';
 import {defined} from '../Base';
+import {LabelName, Labels} from '../Labels';
 
 export interface ThreadActions {
   archive: (messages: Message[]) => Promise<Response>;
+  keep: (messages: Message[]) => Promise<Response>;
 }
 
 function App(): JSX.Element {
@@ -61,9 +68,12 @@ function App(): JSX.Element {
       }
     }
 
-    saveAccessToken((await GoogleSignin.getTokens()).accessToken);
+    await saveAccessToken((await GoogleSignin.getTokens()).accessToken);
+    await Labels.init();
 
-    const fetchedThreads = (await fetchThreads()).threads;
+    const fetchedThreads = (
+      await fetchThreads(`in:inbox -in:${LabelName.keep}`)
+    ).threads;
     if (fetchedThreads) {
       setThreads(fetchedThreads);
     }
@@ -73,6 +83,15 @@ function App(): JSX.Element {
     archive: (messages: Message[]) => {
       setThreadIndex(threadIndex + 1);
       return archiveMessages(messages.map((x) => defined(x.id)));
+    },
+
+    keep: async (messages: Message[]) => {
+      setThreadIndex(threadIndex + 1);
+      const keepLabel = await Labels.getOrCreateLabel(LabelName.keep);
+      return applyLabelToMessages(
+        keepLabel.getId(),
+        messages.map((x) => defined(x.id)),
+      );
     },
   };
 
@@ -92,7 +111,9 @@ function App(): JSX.Element {
             threadId={threads[threadIndex].id as string}
             actions={threadActions}
           />
-        ) : undefined}
+        ) : (
+          <Text>All done. Reload app to check for more.</Text>
+        )}
       </SafeAreaView>
     </React.Fragment>
   );

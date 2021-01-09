@@ -1,3 +1,5 @@
+import './Labels';
+
 interface Json {
   [x: string]: string | number | boolean | Date | Json | JsonArray;
 }
@@ -68,9 +70,15 @@ async function gapiFetchJson<T>({
 const GMAIL_BASE_URL = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const THREADS_URL = `${GMAIL_BASE_URL}/threads`;
 const MESSAGES_URL = `${GMAIL_BASE_URL}/messages`;
+const LABELS_URL = `${GMAIL_BASE_URL}/labels`;
 
-export function fetchThreads(): Promise<gapi.client.gmail.ListThreadsResponse> {
-  return gapiFetchJson({url: THREADS_URL, queryParameters: {q: 'in:inbox'}});
+export function fetchThreads(
+  query: string,
+): Promise<gapi.client.gmail.ListThreadsResponse> {
+  return gapiFetchJson({
+    url: THREADS_URL,
+    queryParameters: {q: query},
+  });
 }
 
 export function fetchMessages(
@@ -93,6 +101,36 @@ export function archiveMessages(messageIds: string[]): Promise<Response> {
       ids: messageIds,
       addLabelIds: [],
       removeLabelIds: ['INBOX'],
+    },
+  });
+}
+
+export function fetchLabels(): Promise<gapi.client.gmail.ListLabelsResponse> {
+  return gapiFetchJson({
+    url: LABELS_URL,
+  });
+}
+
+export function createLabel(
+  labelData: gapi.client.gmail.Label,
+): Promise<gapi.client.gmail.Label> {
+  return gapiFetchJson({
+    url: LABELS_URL,
+    postBody: labelData,
+  });
+}
+
+// Batch modify has no response body, but still get's the wrapper response JSON.
+export function applyLabelToMessages(
+  labelId: string,
+  messageIds: string[],
+): Promise<Response> {
+  return gapiFetch<BatchModifyData>({
+    url: `${MESSAGES_URL}/batchModify`,
+    postBody: {
+      ids: messageIds,
+      addLabelIds: [labelId],
+      removeLabelIds: [],
     },
   });
 }

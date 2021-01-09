@@ -68,11 +68,13 @@ export function Card(props: CardProps): JSX.Element {
             // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
             assertNotReached('Have not loaded message data yet.');
           }
-          console.log('Start archive');
           await props.actions.archive(messages);
-          console.log('End archive');
         } else if (nativeEvent.translationX > MIN_PAN_FOR_ACTION) {
-          console.log('Swipe right');
+          if (!messages.length) {
+            // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
+            assertNotReached('Have not loaded message data yet.');
+          }
+          await props.actions.keep(messages);
         }
       }
     }
