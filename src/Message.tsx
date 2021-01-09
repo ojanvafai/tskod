@@ -100,7 +100,6 @@ export class Message {
     }
 
     const decoded = decode(data);
-    console.log(data, decoded);
     const mimeType = payload.mimeType;
 
     // TODO: There's probably more mime types we need to handle.

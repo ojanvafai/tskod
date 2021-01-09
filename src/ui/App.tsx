@@ -67,10 +67,12 @@ function App(): JSX.Element {
     _signIn();
   }, []);
 
+  const viewStyle = {flex: 1};
+
   return (
     <React.Fragment>
       <StatusBar barStyle="light-content" />
-      <SafeAreaView>
+      <SafeAreaView style={viewStyle}>
         {threads.length ? (
           <Card threadId={threads[0].id as string} />
         ) : undefined}

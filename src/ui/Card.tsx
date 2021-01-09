@@ -87,9 +87,12 @@ export function Card(props: CardProps): JSX.Element {
     backgroundColor: Colors.white,
     elevation: 9,
     transform: [{translateX: pan.x}],
+    flex: 1,
   };
 
-  const subject = messages.length && <Text>{messages[0].subject}</Text>;
+  const subject = messages.length ? (
+    <Text>{messages[0].subject}</Text>
+  ) : undefined;
   const messageComponents = messages.map((x) => (
     <MessageComponent key={x.id} message={x} />
   ));
@@ -99,7 +102,8 @@ export function Card(props: CardProps): JSX.Element {
       onGestureEvent={handleGesture}
       onHandlerStateChange={handleGestureStateChange}>
       <Animated.View style={cardStyle}>
-        {messages.length ? [subject, messageComponents] : undefined}
+        {subject}
+        {messageComponents}
       </Animated.View>
     </PanGestureHandler>
   );
