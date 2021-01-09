@@ -18,7 +18,7 @@ function encodeParameters(
     .join('&')}`;
 }
 
-async function fetchJson<T>({
+function gapiFetch<T>({
   url,
   postBody,
   queryParameters,
@@ -26,7 +26,7 @@ async function fetchJson<T>({
   url: string;
   postBody?: T;
   queryParameters?: {[property: string]: string};
-}): Promise<Json> {
+}): Promise<Response> {
   const fullUrl = encodeParameters(url, {
     alt: 'json',
     'max-results': 100,
@@ -49,7 +49,19 @@ async function fetchJson<T>({
   } else {
     options.method = 'GET';
   }
-  const response = await fetch(fullUrl, options);
+  return fetch(fullUrl, options);
+}
+
+async function gapiFetchJson<T>({
+  url,
+  postBody,
+  queryParameters,
+}: {
+  url: string;
+  postBody?: T;
+  queryParameters?: {[property: string]: string};
+}): Promise<Json> {
+  const response = await gapiFetch<T>({url, postBody, queryParameters});
   return response.json();
 }
 
@@ -58,13 +70,13 @@ const THREADS_URL = `${GMAIL_BASE_URL}/threads`;
 const MESSAGES_URL = `${GMAIL_BASE_URL}/messages`;
 
 export function fetchThreads(): Promise<gapi.client.gmail.ListThreadsResponse> {
-  return fetchJson({url: THREADS_URL, queryParameters: {q: 'in:inbox'}});
+  return gapiFetchJson({url: THREADS_URL, queryParameters: {q: 'in:inbox'}});
 }
 
 export function fetchMessages(
   threadId: string,
 ): Promise<gapi.client.gmail.Thread> {
-  return fetchJson({url: `${THREADS_URL}/${threadId}`});
+  return gapiFetchJson({url: `${THREADS_URL}/${threadId}`});
 }
 
 interface BatchModifyData {
@@ -74,8 +86,8 @@ interface BatchModifyData {
 }
 
 // Batch modify has no response body, but still get's the wrapper response JSON.
-export function archiveMessages(messageIds: string[]): Promise<Json> {
-  return fetchJson<BatchModifyData>({
+export function archiveMessages(messageIds: string[]): Promise<Response> {
+  return gapiFetch<BatchModifyData>({
     url: `${MESSAGES_URL}/batchModify`,
     postBody: {
       ids: messageIds,
