@@ -89,7 +89,7 @@ export function Card(props: CardProps): JSX.Element {
     transform: [{translateX: pan.x}],
   };
 
-  const subject = <Text>Subject: ${messages[0].subject}</Text>;
+  const subject = messages.length && <Text>{messages[0].subject}</Text>;
   const messageComponents = messages.map((x) => (
     <MessageComponent message={x} />
   ));
