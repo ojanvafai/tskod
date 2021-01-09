@@ -30,7 +30,10 @@ export function MessageComponent(props: {message: Message}): JSX.Element {
         )}
         {message.date}
       </Text>
-      <WebView source={{html: message.getHtmlOrPlain()}} />
+      <WebView
+        scrollEnabled={false}
+        source={{html: message.getHtmlOrPlain()}}
+      />
     </>
   );
 }
