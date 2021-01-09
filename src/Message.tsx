@@ -11,9 +11,12 @@ export class Message {
   replyTo?: string;
   sender?: string;
   messageId?: string;
+  _html?: string;
+  _plain?: string;
 
   constructor(message: gapi.client.gmail.Message) {
     this._rawMessage = message;
+    // TODO: Do all parsing lazily.
     this._parseHeaders();
   }
 
@@ -66,6 +69,46 @@ export class Message {
     // Some messages don't have a date header. Fallback to gmail's internal one.
     if (!this.date) {
       this.date = this._rawMessage.internalDate;
+    }
+  }
+
+  _parseBody(): void {
+    this._parseMessagePart(this._rawMessage.payload);
+  }
+
+  getHtmlOrPlain(): string {
+    this._parseBody();
+    return this._html || this._plain || '';
+  }
+
+  _parseMessagePart(payload?: gapi.client.gmail.MessagePart): void {
+    if (!payload) {
+      return;
+    }
+
+    if (payload.parts) {
+      for (const part of payload.parts) {
+        this._parseMessagePart(part);
+      }
+      return;
+    }
+
+    if (!payload.body) {
+      return;
+    }
+
+    const data = payload.body.data;
+    const mimeType = payload.mimeType;
+
+    // TODO: There's probably more mime types we need to handle.
+    // TODO: Need to url base64 decode this
+    switch (mimeType) {
+      case 'text/plain':
+        this._plain = data;
+        break;
+      case 'text/html':
+        this._html = data;
+        break;
     }
   }
 }

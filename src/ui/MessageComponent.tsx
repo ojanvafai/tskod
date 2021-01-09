@@ -8,12 +8,27 @@ export function MessageComponent(props: {message: Message}): JSX.Element {
   return (
     <Text>
       {'\n'}
-      {message.from && <Text>From: {message.from}</Text>}
-      {'\n'}
-      {message.to && <Text>To: {message.to}</Text>}
-      {'\n'}
-      {message.cc && <Text>CC: {message.cc}</Text>}
-      {'\n'}
+      {message.from && (
+        <Text>
+          From: {message.from}
+          {'\n'}
+        </Text>
+      )}
+      {message.to && (
+        <Text>
+          To: {message.to}
+          {'\n'}
+        </Text>
+      )}
+      {message.cc && (
+        <Text>
+          CC: {message.cc}
+          {'\n'}
+        </Text>
+      )}
+      {message.date}
+      {'\n\n'}
+      {message.getHtmlOrPlain()}
     </Text>
   );
 }
