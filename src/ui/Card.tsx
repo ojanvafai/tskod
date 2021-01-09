@@ -12,6 +12,7 @@ import {assertNotReached, defined} from '../Base';
 
 import {archiveMessages, fetchMessages} from '../Gapi';
 import {Message} from '../Message';
+import {MessageComponent} from './MessageComponent';
 
 interface CardProps {
   threadId: string;
@@ -88,17 +89,17 @@ export function Card(props: CardProps): JSX.Element {
     transform: [{translateX: pan.x}],
   };
 
+  const subject = <Text>Subject: ${messages[0].subject}</Text>;
+  const messageComponents = messages.map((x) => (
+    <MessageComponent message={x} />
+  ));
+
   return (
     <PanGestureHandler
       onGestureEvent={handleGesture}
       onHandlerStateChange={handleGestureStateChange}>
       <Animated.View style={cardStyle}>
-        {messages.length ? (
-          <Text>
-            {messages[0].subject}
-            {'\n'}({messages.length} messages)
-          </Text>
-        ) : undefined}
+        {messages.length ? [subject, messageComponents] : undefined}
       </Animated.View>
     </PanGestureHandler>
   );
