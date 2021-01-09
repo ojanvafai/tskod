@@ -8,10 +8,10 @@ import {
   State,
 } from 'react-native-gesture-handler';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import {assertNotReached, defined} from './Base';
+import {assertNotReached, defined} from '../Base';
 
-import {archiveMessages, fetchMessages} from './Gapi';
-import {Message} from './Message';
+import {archiveMessages, fetchMessages} from '../Gapi';
+import {Message} from '../Message';
 
 interface CardProps {
   threadId: string;

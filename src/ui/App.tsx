@@ -4,7 +4,7 @@ import {SafeAreaView, StatusBar} from 'react-native';
 import {GoogleSignin, statusCodes} from '@react-native-community/google-signin';
 
 import {Card} from './Card';
-import {fetchThreads, saveAccessToken} from './Gapi';
+import {fetchThreads, saveAccessToken} from '../Gapi';
 
 function App(): JSX.Element {
   const [threads, setThreads] = useState([] as gapi.client.gmail.Thread[]);
