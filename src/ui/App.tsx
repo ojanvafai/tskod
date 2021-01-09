@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {SafeAreaView, StatusBar, Text} from 'react-native';
+import {SafeAreaView, StatusBar, Text, View} from 'react-native';
 
 import {GoogleSignin, statusCodes} from '@react-native-community/google-signin';
 
@@ -75,6 +75,7 @@ function App(): JSX.Element {
       await fetchThreads(`in:inbox -in:${LabelName.keep}`)
     ).threads;
     if (fetchedThreads) {
+      // TODO: Fetch message data to get the dates so we can sort by date.
       setThreads(fetchedThreads);
     }
   };
@@ -106,14 +107,23 @@ function App(): JSX.Element {
     <React.Fragment>
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={viewStyle}>
-        {threadIndex < threads.length ? (
-          <Card
-            threadId={threads[threadIndex].id as string}
-            actions={threadActions}
-          />
-        ) : (
-          <Text>All done. Reload app to check for more.</Text>
-        )}
+        {/* Wrapper View prevents absolutely positioned Cards from escaping the safe area. */}
+        <View style={viewStyle}>
+          {threadIndex + 1 < threads.length ? (
+            <Card
+              threadId={threads[threadIndex + 1].id as string}
+              actions={threadActions}
+            />
+          ) : undefined}
+          {threadIndex < threads.length ? (
+            <Card
+              threadId={threads[threadIndex].id as string}
+              actions={threadActions}
+            />
+          ) : (
+            <Text>All done. Reload app to check for more.</Text>
+          )}
+        </View>
       </SafeAreaView>
     </React.Fragment>
   );

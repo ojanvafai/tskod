@@ -81,8 +81,18 @@ export function Card(props: CardProps): JSX.Element {
   };
 
   const cardStyle = {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    transform: [{translateX: pan.x}],
+
     margin: 15,
     padding: 4,
+
+    backgroundColor: Colors.white,
+
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -90,10 +100,7 @@ export function Card(props: CardProps): JSX.Element {
     },
     shadowOpacity: 0.32,
     shadowRadius: 5.46,
-    backgroundColor: Colors.white,
     elevation: 9,
-    transform: [{translateX: pan.x}],
-    flex: 1,
   };
 
   const subject = messages.length ? (
