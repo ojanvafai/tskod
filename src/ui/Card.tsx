@@ -1,19 +1,22 @@
 import React, {useEffect, useState} from 'react';
-import {Animated, Dimensions, Text} from 'react-native';
-import {
-  GestureHandlerGestureEventNativeEvent,
-  GestureHandlerStateChangeEvent,
-  PanGestureHandler,
-  PanGestureHandlerEventExtra,
-  State,
-} from 'react-native-gesture-handler';
+import {StyleSheet, Text, Dimensions} from 'react-native';
+import {PanGestureHandler} from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedGestureHandler,
+  useAnimatedStyle,
+  withSpring,
+  runOnJS,
+  //useDerivedValue,
+  //withSpring,
+} from 'react-native-reanimated';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import {assertNotReached} from '../Base';
 
 import {fetchMessages} from '../Gapi';
 import {Message} from '../Message';
 import {ThreadActions} from './App';
 import {MessageComponent} from './MessageComponent';
+import {assertNotReached} from '../Base';
 
 interface CardProps {
   threadId: string;
@@ -23,9 +26,10 @@ interface CardProps {
 
 const MIN_PAN_FOR_ACTION = 150;
 const SPRING_CONFIG = {tension: 20, friction: 7};
+const WINDOW_WIDTH = Dimensions.get('window').width;
 
 export function Card(props: CardProps): JSX.Element {
-  const pan = new Animated.ValueXY();
+  const panX = useSharedValue(0);
 
   const [messages, setMessages] = useState([] as Message[]);
 
@@ -39,84 +43,86 @@ export function Card(props: CardProps): JSX.Element {
     })();
   }, [props.threadId]);
 
-  const handleGesture = Animated.event(
-    [{nativeEvent: {translationX: pan.x, translationY: pan.y}}],
-    {
-      useNativeDriver: true,
-    },
-  );
+  async function swipeLeft(): Promise<void> {
+    if (!messages.length) {
+      // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
+      assertNotReached('Have not loaded message data yet.');
+    }
+    await props.actions.archive(messages);
+  }
 
-  const handleGestureStateChange = async (
-    evt: GestureHandlerStateChangeEvent,
-  ): Promise<void> => {
-    const nativeEvent = (evt.nativeEvent as unknown) as GestureHandlerGestureEventNativeEvent &
-      PanGestureHandlerEventExtra;
-    if (evt.nativeEvent.state === State.END) {
+  async function swipeRight(): Promise<void> {
+    if (!messages.length) {
+      // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
+      assertNotReached('Have not loaded message data yet.');
+    }
+    await props.actions.keep(messages);
+  }
+
+  const gestureHandler = useAnimatedGestureHandler({
+    onStart: (_) => {
+      //
+    },
+    onActive: (event, _) => {
+      panX.value = event.translationX;
+    },
+    onEnd: (event) => {
       if (
-        Math.abs(nativeEvent.translationX) < MIN_PAN_FOR_ACTION &&
-        Math.abs(nativeEvent.translationY) < MIN_PAN_FOR_ACTION
+        Math.abs(event.translationX) < MIN_PAN_FOR_ACTION &&
+        Math.abs(event.translationY) < MIN_PAN_FOR_ACTION
       ) {
-        Animated.spring(pan, {
+        panX.value = withSpring(0, {
           ...SPRING_CONFIG,
-          toValue: {x: 0, y: 0},
-          velocity: nativeEvent.velocityX,
-          useNativeDriver: true,
-        }).start();
-      } else {
-        Animated.spring(pan, {
-          ...SPRING_CONFIG,
-          toValue: {
-            x:
-              Math.sign(nativeEvent.translationX) *
-              Dimensions.get('window').width,
-            y: 0,
-          },
-          velocity: nativeEvent.velocityX,
-          useNativeDriver: true,
-        }).start(({finished}: {finished: boolean}) => {
-          if (finished) {
-            props.cardSwipedAway();
-          }
+          velocity: event.velocityX,
         });
-        if (nativeEvent.translationX < -MIN_PAN_FOR_ACTION) {
-          if (!messages.length) {
-            // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
-            assertNotReached('Have not loaded message data yet.');
-          }
-          await props.actions.archive(messages);
-        } else if (nativeEvent.translationX > MIN_PAN_FOR_ACTION) {
-          if (!messages.length) {
-            // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
-            assertNotReached('Have not loaded message data yet.');
-          }
-          await props.actions.keep(messages);
+      } else {
+        panX.value = withSpring(
+          Math.sign(event.translationX) * WINDOW_WIDTH,
+          {
+            ...SPRING_CONFIG,
+            velocity: event.velocityX,
+          },
+          (_) => {
+            runOnJS(props.cardSwipedAway)();
+          },
+        );
+        if (event.translationX < -MIN_PAN_FOR_ACTION) {
+          runOnJS(swipeLeft)();
+        } else if (event.translationX > MIN_PAN_FOR_ACTION) {
+          runOnJS(swipeRight)();
         }
       }
-    }
-  };
-
-  const cardStyle = {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    transform: [{translateX: pan.x}],
-
-    margin: 15,
-    padding: 4,
-
-    backgroundColor: Colors.white,
-
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
     },
-    shadowOpacity: 0.32,
-    shadowRadius: 5.46,
-    elevation: 9,
-  };
+  });
+
+  const cardStyleAnimated = useAnimatedStyle(() => {
+    return {
+      transform: [{translateX: panX.value}],
+    };
+  });
+
+  const cardStyle = StyleSheet.create({
+    card: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      margin: 15,
+      padding: 4,
+
+      backgroundColor: Colors.white,
+
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.32,
+      shadowRadius: 5.46,
+      elevation: 9,
+    },
+  });
 
   const subject = messages.length ? (
     <Text>{messages[0].subject}</Text>
@@ -126,11 +132,9 @@ export function Card(props: CardProps): JSX.Element {
   ));
 
   return (
-    <PanGestureHandler
-      onGestureEvent={handleGesture}
-      onHandlerStateChange={handleGestureStateChange}>
+    <PanGestureHandler onGestureEvent={gestureHandler}>
       {/* @ts-ignore the type doesn't allow position:absolute...the type seems to be wrong. */}
-      <Animated.View style={cardStyle}>
+      <Animated.View style={[cardStyle.card, cardStyleAnimated]}>
         {subject}
         {messageComponents}
       </Animated.View>
