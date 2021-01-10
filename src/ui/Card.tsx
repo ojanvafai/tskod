@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Animated, Text} from 'react-native';
+import {Animated, Dimensions, Text} from 'react-native';
 import {
   GestureHandlerGestureEventNativeEvent,
   GestureHandlerStateChangeEvent,
@@ -18,6 +18,7 @@ import {MessageComponent} from './MessageComponent';
 interface CardProps {
   threadId: string;
   actions: ThreadActions;
+  cardSwipedAway: () => void;
 }
 
 const MIN_PAN_FOR_ACTION = 150;
@@ -62,7 +63,21 @@ export function Card(props: CardProps): JSX.Element {
           useNativeDriver: true,
         }).start();
       } else {
-        pan.setValue({x: 0, y: 0});
+        Animated.spring(pan, {
+          ...SPRING_CONFIG,
+          toValue: {
+            x:
+              Math.sign(nativeEvent.translationX) *
+              Dimensions.get('window').width,
+            y: 0,
+          },
+          velocity: nativeEvent.velocityX,
+          useNativeDriver: true,
+        }).start(({finished}: {finished: boolean}) => {
+          if (finished) {
+            props.cardSwipedAway();
+          }
+        });
         if (nativeEvent.translationX < -MIN_PAN_FOR_ACTION) {
           if (!messages.length) {
             // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
@@ -114,6 +129,7 @@ export function Card(props: CardProps): JSX.Element {
     <PanGestureHandler
       onGestureEvent={handleGesture}
       onHandlerStateChange={handleGestureStateChange}>
+      {/* @ts-ignore the type doesn't allow position:absolute...the type seems to be wrong. */}
       <Animated.View style={cardStyle}>
         {subject}
         {messageComponents}

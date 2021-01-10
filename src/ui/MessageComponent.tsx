@@ -4,6 +4,9 @@ import React from 'react';
 import {Text} from 'react-native';
 import {WebView} from 'react-native-webview';
 
+const META_VIEWPORT =
+  '<meta name="viewport" content="width=device-width, initial-scale=1">';
+
 export function MessageComponent(props: {message: Message}): JSX.Element {
   const message = props.message;
   return (
@@ -32,7 +35,7 @@ export function MessageComponent(props: {message: Message}): JSX.Element {
       </Text>
       <WebView
         scrollEnabled={false}
-        source={{html: message.getHtmlOrPlain()}}
+        source={{html: META_VIEWPORT + message.getHtmlOrPlain()}}
       />
     </>
   );

@@ -103,22 +103,35 @@ function App(): JSX.Element {
 
   const viewStyle = {flex: 1};
 
+  const incrementThreadIndex = (): void => {
+    setThreadIndex(threadIndex + 1);
+  };
+
+  const threadIdNext =
+    threadIndex + 1 < threads.length && (threads[threadIndex + 1].id as string);
+  const threadIdCurrent =
+    threadIndex < threads.length && (threads[threadIndex].id as string);
+
   return (
     <React.Fragment>
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={viewStyle}>
         {/* Wrapper View prevents absolutely positioned Cards from escaping the safe area. */}
         <View style={viewStyle}>
-          {threadIndex + 1 < threads.length ? (
+          {threadIdNext ? (
             <Card
-              threadId={threads[threadIndex + 1].id as string}
+              key={threadIdNext}
+              threadId={threadIdNext}
               actions={threadActions}
+              cardSwipedAway={incrementThreadIndex}
             />
           ) : undefined}
-          {threadIndex < threads.length ? (
+          {threadIdCurrent ? (
             <Card
-              threadId={threads[threadIndex].id as string}
+              key={threadIdCurrent}
+              threadId={threadIdCurrent}
               actions={threadActions}
+              cardSwipedAway={incrementThreadIndex}
             />
           ) : (
             <Text>All done. Reload app to check for more.</Text>
