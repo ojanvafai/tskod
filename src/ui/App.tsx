@@ -107,10 +107,24 @@ function App(): JSX.Element {
     setThreadIndex(threadIndex + 1);
   };
 
-  const threadIdNext =
-    threadIndex + 1 < threads.length && (threads[threadIndex + 1].id as string);
-  const threadIdCurrent =
-    threadIndex < threads.length && (threads[threadIndex].id as string);
+  const cards = [];
+  let numCardsToRender = 0;
+  while (
+    numCardsToRender < 10 &&
+    threadIndex + numCardsToRender < threads.length
+  ) {
+    const threadId = threads[threadIndex + numCardsToRender].id as string;
+    cards.push(
+      <Card
+        key={threadId}
+        threadId={threadId}
+        actions={threadActions}
+        cardSwipedAway={incrementThreadIndex}
+      />,
+    );
+    numCardsToRender++;
+  }
+  cards.reverse();
 
   return (
     <React.Fragment>
@@ -118,21 +132,8 @@ function App(): JSX.Element {
       <SafeAreaView style={viewStyle}>
         {/* Wrapper View prevents absolutely positioned Cards from escaping the safe area. */}
         <View style={viewStyle}>
-          {threadIdNext ? (
-            <Card
-              key={threadIdNext}
-              threadId={threadIdNext}
-              actions={threadActions}
-              cardSwipedAway={incrementThreadIndex}
-            />
-          ) : undefined}
-          {threadIdCurrent ? (
-            <Card
-              key={threadIdCurrent}
-              threadId={threadIdCurrent}
-              actions={threadActions}
-              cardSwipedAway={incrementThreadIndex}
-            />
+          {cards.length ? (
+            cards
           ) : (
             <Text>All done. Reload app to check for more.</Text>
           )}
