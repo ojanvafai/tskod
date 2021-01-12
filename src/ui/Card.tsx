@@ -24,7 +24,7 @@ interface CardProps {
   cardSwipedAway: () => void;
 }
 
-const MIN_PAN_FOR_ACTION = 150;
+const MIN_PAN_FOR_ACTION = 100;
 const SPRING_CONFIG = {tension: 20, friction: 7};
 const WINDOW_WIDTH = Dimensions.get('window').width;
 
