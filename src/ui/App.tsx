@@ -108,21 +108,22 @@ function App(): JSX.Element {
   };
 
   const cards = [];
-  let numCardsToRender = 0;
+  let numCardsRendered = 0;
   while (
-    numCardsToRender < 10 &&
-    threadIndex + numCardsToRender < threads.length
+    numCardsRendered < 10 &&
+    threadIndex + numCardsRendered < threads.length
   ) {
-    const threadId = threads[threadIndex + numCardsToRender].id as string;
+    const threadId = threads[threadIndex + numCardsRendered].id as string;
     cards.push(
       <Card
         key={threadId}
         threadId={threadId}
         actions={threadActions}
         cardSwipedAway={incrementThreadIndex}
+        preventRenderMessages={numCardsRendered > 2}
       />,
     );
-    numCardsToRender++;
+    numCardsRendered++;
   }
   cards.reverse();
 

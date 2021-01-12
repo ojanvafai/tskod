@@ -22,6 +22,7 @@ interface CardProps {
   threadId: string;
   actions: ThreadActions;
   cardSwipedAway: () => void;
+  preventRenderMessages: boolean;
 }
 
 const MIN_PAN_FOR_ACTION = 100;
@@ -124,12 +125,17 @@ export function Card(props: CardProps): JSX.Element {
     },
   });
 
+  // Since we're only showing one screen worth of messages, run render the most recent ones.
+  const numMessageToRender = 3;
+
   const subject = messages.length ? (
     <Text>{messages[0].subject}</Text>
   ) : undefined;
-  const messageComponents = messages.map((x) => (
-    <MessageComponent key={x.id} message={x} />
-  ));
+  const messageComponents =
+    !props.preventRenderMessages &&
+    messages
+      .slice(messages.length - numMessageToRender)
+      .map((x) => <MessageComponent key={x.id} message={x} />);
 
   return (
     <PanGestureHandler onGestureEvent={gestureHandler}>
