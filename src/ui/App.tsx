@@ -1,5 +1,12 @@
 import React, {useEffect, useReducer, useState} from 'react';
-import {Button, SafeAreaView, StyleSheet, Text, View} from 'react-native';
+import {
+  Button,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import {GoogleSignin, statusCodes} from '@react-native-community/google-signin';
 
@@ -172,6 +179,7 @@ function App(): JSX.Element {
 
   return (
     <React.Fragment>
+      <StatusBar barStyle="dark-content" />
       <SafeAreaView style={style.view}>
         {/* Wrapper View prevents absolutely positioned Cards from escaping the safe area. */}
         <View style={style.view}>
