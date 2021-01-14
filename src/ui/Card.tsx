@@ -7,8 +7,6 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   runOnJS,
-  //useDerivedValue,
-  //withSpring,
 } from 'react-native-reanimated';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 
@@ -139,7 +137,6 @@ export function Card(props: CardProps): JSX.Element {
 
   return (
     <PanGestureHandler onGestureEvent={gestureHandler}>
-      {/* @ts-ignore the type doesn't allow position:absolute...the type seems to be wrong. */}
       <Animated.View style={[cardStyle.card, cardStyleAnimated]}>
         {subject}
         {messageComponents}
