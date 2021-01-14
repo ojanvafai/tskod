@@ -14,14 +14,14 @@ import {Colors} from 'react-native/Libraries/NewAppScreen';
 
 import {fetchMessages} from '../Gapi';
 import {Message} from '../Message';
-import {ThreadActions} from './App';
+import {UpdateThreadListAction, ThreadActions} from './App';
 import {MessageComponent} from './MessageComponent';
 import {assertNotReached} from '../Base';
 
 interface CardProps {
   threadId: string;
   actions: ThreadActions;
-  cardSwipedAway: () => void;
+  cardSwipedAway: React.Dispatch<UpdateThreadListAction>;
   preventRenderMessages: boolean;
 }
 
@@ -84,7 +84,7 @@ export function Card(props: CardProps): JSX.Element {
             velocity: event.velocityX,
           },
           (_) => {
-            runOnJS(props.cardSwipedAway)();
+            runOnJS(props.cardSwipedAway)({removeThreadId: props.threadId});
           },
         );
         if (event.translationX < -MIN_PAN_FOR_ACTION) {
