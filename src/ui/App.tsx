@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useReducer} from 'react';
 import {SafeAreaView, StatusBar, Text, View} from 'react-native';
 
 import {GoogleSignin, statusCodes} from '@react-native-community/google-signin';
@@ -19,9 +19,34 @@ export interface ThreadActions {
   keep: (messages: Message[]) => Promise<Response>;
 }
 
+interface ThreadsState {
+  threads: gapi.client.gmail.Thread[];
+}
+
+export interface UpdateThreadListAction {
+  removeThreadId?: string;
+  threads?: gapi.client.gmail.Thread[];
+}
+
 function App(): JSX.Element {
-  const [threadIndex, setThreadIndex] = useState(0);
-  const [threads, setThreads] = useState([] as gapi.client.gmail.Thread[]);
+  function reducer(
+    state: ThreadsState,
+    action: UpdateThreadListAction,
+  ): ThreadsState {
+    if (action.removeThreadId) {
+      return {
+        threads: state.threads.filter((x) => x.id !== action.removeThreadId),
+      };
+    }
+    if (action.threads) {
+      return {threads: action.threads};
+    }
+    throw new Error('Invalid thread reducer action.');
+  }
+
+  const [threadListState, updateThreadListState] = useReducer(reducer, {
+    threads: [],
+  });
 
   const _signIn = async (): Promise<void> => {
     GoogleSignin.configure({
@@ -71,23 +96,20 @@ function App(): JSX.Element {
     await saveAccessToken((await GoogleSignin.getTokens()).accessToken);
     await Labels.init();
 
-    const fetchedThreads = (
-      await fetchThreads(`in:inbox -in:${LabelName.keep}`)
-    ).threads;
-    if (fetchedThreads) {
+    const threads = (await fetchThreads(`in:inbox -in:${LabelName.keep}`))
+      .threads;
+    if (threads) {
       // TODO: Fetch message data to get the dates so we can sort by date.
-      setThreads(fetchedThreads);
+      updateThreadListState({threads});
     }
   };
 
   const threadActions: ThreadActions = {
     archive: (messages: Message[]) => {
-      setThreadIndex(threadIndex + 1);
       return archiveMessages(messages.map((x) => defined(x.id)));
     },
 
     keep: async (messages: Message[]) => {
-      setThreadIndex(threadIndex + 1);
       const keepLabel = await Labels.getOrCreateLabel(LabelName.keep);
       return applyLabelToMessages(
         keepLabel.getId(),
@@ -103,29 +125,25 @@ function App(): JSX.Element {
 
   const viewStyle = {flex: 1};
 
-  const incrementThreadIndex = (): void => {
-    setThreadIndex(threadIndex + 1);
-  };
-
   const cards = [];
-  let numCardsRendered = 0;
-  while (
-    numCardsRendered < 10 &&
-    threadIndex + numCardsRendered < threads.length
-  ) {
-    const threadId = threads[threadIndex + numCardsRendered].id as string;
+  const threads = threadListState.threads;
+  // TODO: Once we take message fetching out of Card creation, only prerender
+  // one card below the most recently swiped card. Until then, render more cards
+  // and prevent rendering their messages to avoid getting stalled on slow
+  // network.
+  let numCardsRendered = 10;
+  while (numCardsRendered-- && numCardsRendered < threads.length) {
+    const threadId = threads[numCardsRendered].id as string;
     cards.push(
       <Card
         key={threadId}
         threadId={threadId}
         actions={threadActions}
-        cardSwipedAway={incrementThreadIndex}
+        cardSwipedAway={updateThreadListState}
         preventRenderMessages={numCardsRendered > 2}
       />,
     );
-    numCardsRendered++;
   }
-  cards.reverse();
 
   return (
     <React.Fragment>
