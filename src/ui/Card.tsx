@@ -148,13 +148,17 @@ export function Card(props: CardProps): JSX.Element {
       justifyContent: 'center',
       flex: 0,
     },
+    subject: {
+      fontWeight: 'bold',
+      fontSize: 16,
+    }
   });
 
   // Since we're only showing one screen worth of messages, run render the most recent ones.
   const numMessageToRender = 3;
 
   const subject = messages.length ? (
-    <Text>{messages[0].subject}</Text>
+    <Text style={cardStyle.subject}>{messages[0].subject}</Text>
   ) : undefined;
   const messageComponents =
     !props.preventRenderMessages &&
