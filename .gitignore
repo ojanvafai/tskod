@@ -30,6 +30,7 @@ local.properties
 *.iml
 android/app/src/main/assets/
 android/app/src/main/res/
+android/.project
 
 # node.js
 #
