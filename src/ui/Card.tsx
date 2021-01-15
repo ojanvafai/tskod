@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {StyleSheet, Text, Dimensions} from 'react-native';
+import {StyleSheet, Text, Dimensions, View} from 'react-native';
 import {PanGestureHandler} from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -121,6 +121,33 @@ export function Card(props: CardProps): JSX.Element {
       shadowRadius: 5.46,
       elevation: 9,
     },
+    toolbar: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      justifyContent: 'center',
+    },
+    right: {
+      right: -75,
+    },
+    left: {
+      left: -75,
+    },
+    toolbarButton: {
+      width: 50,
+      height: 50,
+      backgroundColor: '#ffffffee',
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 5,
+      borderRadius: 25,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flex: 0,
+    },
   });
 
   // Since we're only showing one screen worth of messages, run render the most recent ones.
@@ -140,6 +167,16 @@ export function Card(props: CardProps): JSX.Element {
       <Animated.View style={[cardStyle.card, cardStyleAnimated]}>
         {subject}
         {messageComponents}
+        <View style={[cardStyle.toolbar, cardStyle.right]}>
+          <View style={cardStyle.toolbarButton}>
+            <Text>archive</Text>
+          </View>
+        </View>
+        <View style={[cardStyle.toolbar, cardStyle.left]}>
+          <View style={cardStyle.toolbarButton}>
+            <Text>keep</Text>
+          </View>
+        </View>
       </Animated.View>
     </PanGestureHandler>
   );
