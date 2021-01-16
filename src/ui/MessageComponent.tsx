@@ -37,18 +37,20 @@ export function MessageComponent(props: {message: Message}): JSX.Element {
         <View style={style.addresses}>
           {message.from && (
             <Text style={[style.bold, style.font]} numberOfLines={1}>
-              {message.getFromNames()}
+              {message.getFromNames().join(', ')}
             </Text>
           )}
           {message.to && (
             <Text style={headerRowStyles} numberOfLines={1}>
-              <Text style={style.bold}>to:</Text> {message.getToNames()}
+              <Text style={style.bold}>to:</Text>{' '}
+              {message.getToNames().join(', ')}
             </Text>
           )}
 
           {message.cc && (
             <Text style={headerRowStyles} numberOfLines={1}>
-              <Text style={style.bold}>cc:</Text> {message.getCcNames()}
+              <Text style={style.bold}>cc:</Text>{' '}
+              {message.getCcNames().join(', ')}
             </Text>
           )}
         </View>
