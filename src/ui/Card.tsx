@@ -35,7 +35,8 @@ interface CardProps {
 }
 
 const MIN_PAN_FOR_ACTION = 100;
-const WINDOW_WIDTH = Dimensions.get('window').width;
+const TOOLBAR_OFFSET = 75;
+const WINDOW_WIDTH = Dimensions.get('window').width + TOOLBAR_OFFSET;
 
 // TODO - make an enum of what the current action is, so that
 //when the spring animation ends, we can call the appropriate method.
@@ -213,10 +214,10 @@ export function Card(props: CardProps): JSX.Element {
       justifyContent: 'center',
     },
     right: {
-      right: -75,
+      right: -TOOLBAR_OFFSET,
     },
     left: {
-      left: -75,
+      left: -TOOLBAR_OFFSET,
     },
     toolbarButton: {
       width: 50,
