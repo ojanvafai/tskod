@@ -1,4 +1,4 @@
-import * as Realm from 'realm';
+import Realm from 'realm';
 //import BSON from 'bson';
 
 async function testRealmLogin(): Promise<void> {
