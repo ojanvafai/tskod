@@ -31,7 +31,7 @@ export function MessageComponent(props: {message: Message}): JSX.Element {
             {'\n'}
           </Text>
         )}
-        {message.date}
+        {message.formatDate()}
         {'\n'}
       </Text>
       <WebView

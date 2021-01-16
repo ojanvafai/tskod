@@ -1,6 +1,31 @@
 import {defined} from './Base';
 import {decode} from './Base64Url';
 
+function isToday(input: Date): boolean {
+  const date = new Date(input);
+  date.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return date.getTime() === today.getTime();
+}
+
+function isThisYear(input: Date): boolean {
+  return input.getFullYear() === new Date().getFullYear();
+}
+
+const thisYearDateFormat = {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: 'numeric',
+};
+const thisYearDateFormatter = new Intl.DateTimeFormat(
+  undefined,
+  thisYearDateFormat,
+);
+const fullDateFormat = Object.assign({year: 'numeric'}, thisYearDateFormat);
+const fullDateFormatter = new Intl.DateTimeFormat(undefined, fullDateFormat);
+
 export class Message {
   private _rawMessage: gapi.client.gmail.Message;
   subject?: string;
@@ -71,6 +96,17 @@ export class Message {
     if (!this.date) {
       this.date = this._rawMessage.internalDate;
     }
+  }
+
+  formatDate(): string {
+    const date = new Date(defined(this.date));
+    if (isToday(date)) {
+      return date.toLocaleTimeString();
+    }
+    if (isThisYear(date)) {
+      return thisYearDateFormatter.format(date);
+    }
+    return fullDateFormatter.format(date);
   }
 
   _parseBody(): void {
