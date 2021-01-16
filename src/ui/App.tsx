@@ -20,7 +20,7 @@ import {
 import {Message} from '../Message';
 import {defined} from '../Base';
 import {LabelName, Labels} from '../Labels';
-
+import {testRealmLogin} from '../Sync';
 export interface ThreadActions {
   archive: (messages: Message[]) => Promise<Response>;
   keep: (messages: Message[]) => Promise<Response>;
@@ -82,6 +82,9 @@ function App(): JSX.Element {
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async (): Promise<void> => {
+      console.log('Before realm login');
+      await testRealmLogin();
+      console.log('After Realm Login');
       GoogleSignin.configure({
         scopes: [
           'https://www.googleapis.com/auth/gmail.modify',
