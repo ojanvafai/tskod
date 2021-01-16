@@ -67,7 +67,11 @@ export class Message {
   }
 
   private _parseHeaders(): void {
-    const headers = defined(this._rawMessage.payload?.headers);
+    const headers = this._rawMessage.payload?.headers;
+    // We don't have headers when we fetch only the message ID and labels.
+    if (!headers) {
+      return;
+    }
     for (const header of headers) {
       const name = defined(header.name).toLowerCase();
       switch (name) {
