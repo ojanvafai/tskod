@@ -282,8 +282,10 @@ export function Card(props: CardProps): JSX.Element {
     },
   };
 
-  const subject = messages.length ? (
-    <Text style={cardStyle.subject}>{messages[0].subject}</Text>
+  const subject = firstAndLastMessageContents.length ? (
+    <Text style={cardStyle.subject}>
+      {firstAndLastMessageContents[0].subject}
+    </Text>
   ) : undefined;
 
   let messageComponents;
