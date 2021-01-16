@@ -74,6 +74,8 @@ export class Message {
     }
     for (const header of headers) {
       const name = defined(header.name).toLowerCase();
+      // Add to the list of headers we fetch in Gapi.tsx to add a new header
+      // here.
       switch (name) {
         case 'subject':
           this.subject = defined(header.value);
@@ -93,22 +95,6 @@ export class Message {
 
         case 'date':
           this.date = defined(header.value);
-          break;
-
-        case 'delivered-to':
-          this.deliveredTo = defined(header.value);
-          break;
-
-        case 'reply-to':
-          this.replyTo = defined(header.value);
-          break;
-
-        case 'sender':
-          this.sender = defined(header.value);
-          break;
-
-        case 'message-id':
-          this.messageId = defined(header.value);
           break;
       }
     }

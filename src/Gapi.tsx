@@ -88,12 +88,16 @@ export function fetchMessageIdsAndLabels(
   });
 }
 
-// TODO: Fetch only the headers that we actually use via the 'metadataHeaders' queryParamter.
 export function fetchMessageById(
   messageId: string,
 ): Promise<gapi.client.gmail.Message> {
   return gapiFetchJson({
     url: `${MESSAGES_URL}/${messageId}`,
+    queryParameters: {
+      // Fetching a new header involves adding it here and then parsing it in
+      // Message.tsx.
+      metadataHeaders: 'subject,from,to,cc,date',
+    },
   });
 }
 
