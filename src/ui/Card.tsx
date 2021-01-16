@@ -38,8 +38,6 @@ const MIN_PAN_FOR_ACTION = 100;
 const TOOLBAR_OFFSET = 75;
 const WINDOW_WIDTH = Dimensions.get('window').width + TOOLBAR_OFFSET;
 
-// TODO - make an enum of what the current action is, so that
-//when the spring animation ends, we can call the appropriate method.
 enum CurrentAction {
   None = 0,
   SwipingRight,
@@ -58,7 +56,6 @@ export function Card(props: CardProps): JSX.Element {
   ] = useState([] as Message[]);
 
   async function swipeLeft(): Promise<void> {
-    console.log('swipeLeft');
     if (!messages.length) {
       // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
       assertNotReached('Have not loaded message data yet.');
@@ -68,8 +65,6 @@ export function Card(props: CardProps): JSX.Element {
   }
 
   async function swipeRight(): Promise<void> {
-    console.log('swipeRight');
-
     if (!messages.length) {
       // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
       assertNotReached('Have not loaded message data yet.');
@@ -216,6 +211,15 @@ export function Card(props: CardProps): JSX.Element {
       right: 0,
 
       padding: 16,
+
+      transform: [
+        {
+          rotate: `${angleOffset}deg`,
+        },
+        // @ts-expect-error StyleSheet.create type doesn't like getting an
+        // Animated.Node<number> instead of a plain number.
+        {translateX: panDrawX},
+      ],
     },
     visibleCard: {
       flex: 1,
@@ -271,17 +275,6 @@ export function Card(props: CardProps): JSX.Element {
     },
   });
 
-  const cardStyleAnimated = {
-    card: {
-      transform: [
-        {
-          rotate: `${angleOffset}deg`,
-        },
-        {translateX: panDrawX},
-      ],
-    },
-  };
-
   const subject = firstAndLastMessageContents.length ? (
     <Text style={cardStyle.subject}>
       {firstAndLastMessageContents[0].subject}
@@ -299,6 +292,7 @@ export function Card(props: CardProps): JSX.Element {
     if (messages.length > 1) {
       const elidedMessageCount = messages.length - 2;
       messageComponents.push(
+        // Need to use a view because borders on only one side don't work on Text.
         <View key="messageCount" style={cardStyle.elidedMessageCount}>
           <Text>
             {elidedMessageCount > 0
@@ -322,7 +316,7 @@ export function Card(props: CardProps): JSX.Element {
       onGestureEvent={handleGesture}
       onHandlerStateChange={handleGesture}>
       {/* @ts-ignore the type doesn't allow position:absolute...the type seems to be wrong. */}
-      <Animated.View style={[cardStyle.card, cardStyleAnimated.card]}>
+      <Animated.View style={cardStyle.card}>
         <View style={cardStyle.visibleCard}>
           {subject}
           {messageComponents}
