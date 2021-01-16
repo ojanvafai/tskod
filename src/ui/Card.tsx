@@ -20,9 +20,9 @@ import Animated, {
   not,
 } from 'react-native-reanimated';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import {assertNotReached} from '../Base';
+import {assertNotReached, defined} from '../Base';
 
-import {fetchMessages} from '../Gapi';
+import {fetchMessageIdsAndLabels, fetchMessagesById} from '../Gapi';
 import {Message} from '../Message';
 import {UpdateThreadListAction, ThreadActions} from './App';
 import {MessageComponent} from './MessageComponent';
@@ -52,6 +52,10 @@ function randomSign(): number {
 
 export function Card(props: CardProps): JSX.Element {
   const [messages, setMessages] = useState([] as Message[]);
+  const [
+    firstAndLastMessageContents,
+    setFirstAndLastMessageContents,
+  ] = useState([] as Message[]);
 
   async function swipeLeft(): Promise<void> {
     console.log('swipeLeft');
@@ -168,9 +172,18 @@ export function Card(props: CardProps): JSX.Element {
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async (): Promise<void> => {
-      const messageData = await fetchMessages(props.threadId);
-      if (messageData.messages !== undefined) {
-        setMessages(messageData.messages.map((x) => new Message(x)));
+      const messageIds = (await fetchMessageIdsAndLabels(props.threadId))
+        .messages;
+      if (messageIds !== undefined) {
+        setMessages(messageIds.map((x) => new Message(x)));
+        const messageIdsToFetch = [defined(messageIds[0].id)];
+        if (messageIds.length > 1) {
+          messageIdsToFetch.push(defined(messageIds[messageIds.length - 1].id));
+        }
+        const messageContentsData = await fetchMessagesById(messageIdsToFetch);
+        setFirstAndLastMessageContents(
+          messageContentsData.map((x) => new Message(x)),
+        );
       }
     })();
   }, [props.threadId]);
@@ -273,12 +286,13 @@ export function Card(props: CardProps): JSX.Element {
     <Text style={cardStyle.subject}>{messages[0].subject}</Text>
   ) : undefined;
 
-  // TODO: Since we're only showing the first and last message, we don't need to
-  // fetch the message contents of the ones in the middle.
   let messageComponents;
-  if (!props.preventRenderMessages && messages.length) {
+  if (!props.preventRenderMessages && firstAndLastMessageContents.length) {
     messageComponents = [
-      <MessageComponent key={messages[0].id} message={messages[0]} />,
+      <MessageComponent
+        key={firstAndLastMessageContents[0].id}
+        message={firstAndLastMessageContents[0]}
+      />,
     ];
     if (messages.length > 1) {
       if (messages.length > 2) {
@@ -291,7 +305,7 @@ export function Card(props: CardProps): JSX.Element {
           </View>,
         );
       }
-      const lastMessage = messages[messages.length - 1];
+      const lastMessage = firstAndLastMessageContents[1];
       messageComponents.push(
         <MessageComponent key={lastMessage.id} message={lastMessage} />,
       );

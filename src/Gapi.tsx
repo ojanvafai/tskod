@@ -79,10 +79,30 @@ export function fetchThreads(
   });
 }
 
-export function fetchMessages(
+export function fetchMessageIdsAndLabels(
   threadId: string,
 ): Promise<gapi.client.gmail.Thread> {
-  return gapiFetchJson({url: `${THREADS_URL}/${threadId}`});
+  return gapiFetchJson({
+    url: `${THREADS_URL}/${threadId}`,
+    queryParameters: {format: 'MINIMAL'},
+  });
+}
+
+// TODO: Fetch only the headers that we actually use via the 'metadataHeaders' queryParamter.
+export function fetchMessageById(
+  messageId: string,
+): Promise<gapi.client.gmail.Message> {
+  return gapiFetchJson({
+    url: `${MESSAGES_URL}/${messageId}`,
+  });
+}
+
+export function fetchMessagesById(
+  messageIds: string[],
+): Promise<gapi.client.gmail.Message[]> {
+  // TODO: Batch this per https://developers.google.com/gmail/api/guides/batch
+  // to do a single network request instead of N requests.
+  return Promise.all(messageIds.map((id) => fetchMessageById(id)));
 }
 
 interface BatchModifyData {
