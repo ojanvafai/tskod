@@ -2,6 +2,9 @@ import {defined, notNull} from './Base';
 import {decode} from './Base64Url';
 import * as emailAddresses from 'email-addresses';
 
+type AddressGroup = emailAddresses.ParsedMailbox | emailAddresses.ParsedGroup;
+type AddressList = AddressGroup[];
+
 function isToday(input: Date): boolean {
   const date = new Date(input);
   date.setHours(0, 0, 0, 0);
@@ -26,9 +29,6 @@ const thisYearDateFormatter = new Intl.DateTimeFormat(
 );
 const fullDateFormat = Object.assign({year: 'numeric'}, thisYearDateFormat);
 const fullDateFormatter = new Intl.DateTimeFormat(undefined, fullDateFormat);
-
-type AddressGroup = emailAddresses.ParsedMailbox | emailAddresses.ParsedGroup;
-type AddressList = AddressGroup[];
 
 export class Message {
   private _rawMessage: gapi.client.gmail.Message;
