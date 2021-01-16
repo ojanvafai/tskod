@@ -17,12 +17,18 @@ function isThisYear(input: Date): boolean {
   return input.getFullYear() === new Date().getFullYear();
 }
 
-const thisYearDateFormat = {
-  month: 'short',
-  day: 'numeric',
+const thisDayDateFormat = {
   hour: 'numeric',
   minute: 'numeric',
 };
+const thisDayDateFormatter = new Intl.DateTimeFormat(
+  undefined,
+  thisDayDateFormat,
+);
+const thisYearDateFormat = Object.assign(
+  {month: 'short', day: 'numeric'},
+  thisDayDateFormat,
+);
 const thisYearDateFormatter = new Intl.DateTimeFormat(
   undefined,
   thisYearDateFormat,
@@ -125,16 +131,11 @@ export class Message {
     return addresses;
   }
 
-  _formatParsedMailbox(mailbox: emailAddresses.ParsedMailbox): string {
-    // TODO: Make the name bold
-    return `${mailbox.name} <${mailbox.address}>`;
-  }
-
-  getFromAddresses(): string[] {
+  getFromNames(): string[] {
     if (!this._parsedFrom) {
       this._parsedFrom = emailAddresses.parseAddressList(defined(this.from));
     }
-    return this._forEachAddress(this._parsedFrom, this._formatParsedMailbox);
+    return this._forEachAddress(this._parsedFrom, this._formatParsedName);
   }
 
   _formatParsedName(mailbox: emailAddresses.ParsedMailbox): string {
@@ -158,7 +159,7 @@ export class Message {
   formatDate(): string {
     const date = new Date(defined(this.date));
     if (isToday(date)) {
-      return date.toLocaleTimeString();
+      return thisDayDateFormatter.format(date);
     }
     if (isThisYear(date)) {
       return thisYearDateFormatter.format(date);
