@@ -207,6 +207,7 @@ export function Card(props: CardProps): JSX.Element {
     visibleCard: {
       flex: 1,
       padding: 12,
+      paddingBottom: 0,
       backgroundColor: Colors.white,
 
       shadowColor: '#000',
