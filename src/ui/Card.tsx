@@ -249,6 +249,13 @@ export function Card(props: CardProps): JSX.Element {
       fontWeight: 'bold',
       fontSize: 16,
     },
+    elidedMessageCount: {
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: '#ccc',
+      alignItems: 'center',
+      padding: 8,
+    },
   });
 
   const cardStyleAnimated = {
@@ -262,17 +269,34 @@ export function Card(props: CardProps): JSX.Element {
     },
   };
 
-  // Since we're only showing one screen worth of messages, run render the most recent ones.
-  const numMessageToRender = 3;
-
   const subject = messages.length ? (
     <Text style={cardStyle.subject}>{messages[0].subject}</Text>
   ) : undefined;
-  const messageComponents =
-    !props.preventRenderMessages &&
-    messages
-      .slice(messages.length - numMessageToRender)
-      .map((x) => <MessageComponent key={x.id} message={x} />);
+
+  // TODO: Since we're only showing the first and last message, we don't need to
+  // fetch the message contents of the ones in the middle.
+  let messageComponents;
+  if (!props.preventRenderMessages && messages.length) {
+    messageComponents = [
+      <MessageComponent key={messages[0].id} message={messages[0]} />,
+    ];
+    if (messages.length > 1) {
+      if (messages.length > 2) {
+        const elidedMessageCount = messages.length - 2;
+        messageComponents.push(
+          <View key="messageCount" style={cardStyle.elidedMessageCount}>
+            <Text>
+              {elidedMessageCount} more message{elidedMessageCount > 1 && 's'}
+            </Text>
+          </View>,
+        );
+      }
+      const lastMessage = messages[messages.length - 1];
+      messageComponents.push(
+        <MessageComponent key={lastMessage.id} message={lastMessage} />,
+      );
+    }
+  }
 
   return (
     <PanGestureHandler
