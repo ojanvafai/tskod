@@ -31,7 +31,6 @@ const style = StyleSheet.create({
 export function MessageComponent(props: {message: Message}): JSX.Element {
   const message = props.message;
   const headerRowStyles = [style.headerRow, style.font];
-  console.log(message);
   return (
     <>
       <View style={style.header}>

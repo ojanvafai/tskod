@@ -199,7 +199,7 @@ export function Card(props: CardProps): JSX.Element {
   );
 
   const [angleOffset] = useState(randomSign() * Math.random());
-  const cardStyle = StyleSheet.create({
+  const style = StyleSheet.create({
     // Have the card's drag area be the full size of the screen so that the user
     // can't drag the card behind the one on top by grabbing the edge that's
     // sticking out.
@@ -276,9 +276,7 @@ export function Card(props: CardProps): JSX.Element {
   });
 
   const subject = firstAndLastMessageContents.length ? (
-    <Text style={cardStyle.subject}>
-      {firstAndLastMessageContents[0].subject}
-    </Text>
+    <Text style={style.subject}>{firstAndLastMessageContents[0].subject}</Text>
   ) : undefined;
 
   let messageComponents;
@@ -293,7 +291,7 @@ export function Card(props: CardProps): JSX.Element {
       const elidedMessageCount = messages.length - 2;
       messageComponents.push(
         // Need to use a view because borders on only one side don't work on Text.
-        <View key="messageCount" style={cardStyle.elidedMessageCount}>
+        <View key="messageCount" style={style.elidedMessageCount}>
           <Text>
             {elidedMessageCount > 0
               ? `${elidedMessageCount} more message${
@@ -316,17 +314,17 @@ export function Card(props: CardProps): JSX.Element {
       onGestureEvent={handleGesture}
       onHandlerStateChange={handleGesture}>
       {/* @ts-ignore the type doesn't allow position:absolute...the type seems to be wrong. */}
-      <Animated.View style={cardStyle.card}>
-        <View style={cardStyle.visibleCard}>
+      <Animated.View style={style.card}>
+        <View style={style.visibleCard}>
           {subject}
           {messageComponents}
-          <View style={[cardStyle.toolbar, cardStyle.right]}>
-            <View style={cardStyle.toolbarButton}>
+          <View style={[style.toolbar, style.right]}>
+            <View style={style.toolbarButton}>
               <Text>archive</Text>
             </View>
           </View>
-          <View style={[cardStyle.toolbar, cardStyle.left]}>
-            <View style={cardStyle.toolbarButton}>
+          <View style={[style.toolbar, style.left]}>
+            <View style={style.toolbarButton}>
               <Text>keep</Text>
             </View>
           </View>
