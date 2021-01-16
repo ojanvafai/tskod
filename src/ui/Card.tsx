@@ -46,6 +46,10 @@ enum CurrentAction {
   SwipingLeft,
 }
 
+function randomSign(): number {
+  return Math.random() > 0.5 ? 1 : -1;
+}
+
 export function Card(props: CardProps): JSX.Element {
   const [messages, setMessages] = useState([] as Message[]);
 
@@ -154,7 +158,8 @@ export function Card(props: CardProps): JSX.Element {
     ]);
   }
 
-  const panX = Animated.useValue(0);
+  const [xOffset] = useState(4 * randomSign() * Math.random());
+  const panX = Animated.useValue(0 + xOffset);
   const velocityX = Animated.useValue(0);
   const panState = Animated.useValue(State.UNDETERMINED);
   const [clock] = useState(new Clock());
@@ -185,7 +190,11 @@ export function Card(props: CardProps): JSX.Element {
     },
   );
 
+  const [angleOffset] = useState(randomSign() * Math.random());
   const cardStyle = StyleSheet.create({
+    // Have the card's drag area be the full size of the screen so that the user
+    // can't drag the card behind the one on top by grabbing the edge that's
+    // sticking out.
     card: {
       position: 'absolute',
       top: 0,
@@ -193,19 +202,20 @@ export function Card(props: CardProps): JSX.Element {
       left: 0,
       right: 0,
 
-      margin: 15,
-      padding: 4,
-
+      padding: 16,
+    },
+    visibleCard: {
+      flex: 1,
+      padding: 12,
       backgroundColor: Colors.white,
 
       shadowColor: '#000',
       shadowOffset: {
         width: 0,
-        height: 4,
+        height: 1,
       },
-      shadowOpacity: 0.32,
-      shadowRadius: 5.46,
-      elevation: 9,
+      shadowOpacity: 0.25,
+      shadowRadius: 2,
     },
     toolbar: {
       position: 'absolute',
@@ -242,7 +252,12 @@ export function Card(props: CardProps): JSX.Element {
 
   const cardStyleAnimated = {
     card: {
-      transform: [{translateX: panDrawX}],
+      transform: [
+        {
+          rotate: `${angleOffset}deg`,
+        },
+        {translateX: panDrawX},
+      ],
     },
   };
 
@@ -264,16 +279,18 @@ export function Card(props: CardProps): JSX.Element {
       onHandlerStateChange={handleGesture}>
       {/* @ts-ignore the type doesn't allow position:absolute...the type seems to be wrong. */}
       <Animated.View style={[cardStyle.card, cardStyleAnimated.card]}>
-        {subject}
-        {messageComponents}
-        <View style={[cardStyle.toolbar, cardStyle.right]}>
-          <View style={cardStyle.toolbarButton}>
-            <Text>archive</Text>
+        <View style={cardStyle.visibleCard}>
+          {subject}
+          {messageComponents}
+          <View style={[cardStyle.toolbar, cardStyle.right]}>
+            <View style={cardStyle.toolbarButton}>
+              <Text>archive</Text>
+            </View>
           </View>
-        </View>
-        <View style={[cardStyle.toolbar, cardStyle.left]}>
-          <View style={cardStyle.toolbarButton}>
-            <Text>keep</Text>
+          <View style={[cardStyle.toolbar, cardStyle.left]}>
+            <View style={cardStyle.toolbarButton}>
+              <Text>keep</Text>
+            </View>
           </View>
         </View>
       </Animated.View>
