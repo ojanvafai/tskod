@@ -12,6 +12,7 @@
   "dependencies": {
     "@react-native-community/google-signin": "^5.0.0",
     "@types/gapi.client.gmail": "^1.0.3",
+    "email-addresses": "^4.0.0",
     "react": "16.13.1",
     "react-native": "0.63.3",
     "react-native-gesture-handler": "^1.9.0",

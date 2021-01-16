@@ -2486,6 +2486,11 @@
   "resolved" "https://registry.npmjs.org/ee-first/-/ee-first-1.1.1.tgz"
   "version" "1.1.1"
 
+"email-addresses@^4.0.0":
+  "integrity" "sha512-Nas3sSSiD5lSIoqBos0FMjB9h4clHxXuAahHKGJ5doRWavEB7pBHzOxnI7R5f1MuGNrrSnsZFJ81HCBv0DZmnw=="
+  "resolved" "https://registry.npmjs.org/email-addresses/-/email-addresses-4.0.0.tgz"
+  "version" "4.0.0"
+
 "emoji-regex@^7.0.1":
   "integrity" "sha512-CwBLREIQ7LvYFB0WyRvwhq5N5qPhc6PMjD6bYggFlI5YyDgl+0vxq5VHbMOFqLg7hfWzmu8T5Z1QofhmTIhItA=="
   "resolved" "https://registry.npmjs.org/emoji-regex/-/emoji-regex-7.0.3.tgz"
