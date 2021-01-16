@@ -297,16 +297,19 @@ export function Card(props: CardProps): JSX.Element {
       />,
     ];
     if (messages.length > 1) {
-      if (messages.length > 2) {
-        const elidedMessageCount = messages.length - 2;
-        messageComponents.push(
-          <View key="messageCount" style={cardStyle.elidedMessageCount}>
-            <Text>
-              {elidedMessageCount} more message{elidedMessageCount > 1 && 's'}
-            </Text>
-          </View>,
-        );
-      }
+      const elidedMessageCount = messages.length - 2;
+      messageComponents.push(
+        <View key="messageCount" style={cardStyle.elidedMessageCount}>
+          <Text>
+            {elidedMessageCount > 0
+              ? `${elidedMessageCount} more message${
+                  elidedMessageCount > 1 && 's'
+                }`
+              : ' '}
+          </Text>
+        </View>,
+      );
+
       const lastMessage = firstAndLastMessageContents[1];
       messageComponents.push(
         <MessageComponent key={lastMessage.id} message={lastMessage} />,
