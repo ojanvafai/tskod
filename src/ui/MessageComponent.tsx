@@ -35,19 +35,21 @@ export function MessageComponent(props: {message: Message}): JSX.Element {
     <>
       <View style={style.header}>
         <View style={style.addresses}>
-          {message.from && (
+          {/* Need to do this ugly || undefined thing in case the value is empty string,
+          in which case we don't want to return an empty string outside of a Text element.
+          So make the we return undefined in that case. */}
+          {(message.from || undefined) && (
             <Text style={[style.bold, style.font]} numberOfLines={1}>
               {message.getFromNames().join(', ')}
             </Text>
           )}
-          {message.to && (
+          {(message.to || undefined) && (
             <Text style={headerRowStyles} numberOfLines={1}>
               <Text style={style.bold}>to:</Text>{' '}
               {message.getToNames().join(', ')}
             </Text>
           )}
-
-          {message.cc && (
+          {(message.cc || undefined) && (
             <Text style={headerRowStyles} numberOfLines={1}>
               <Text style={style.bold}>cc:</Text>{' '}
               {message.getCcNames().join(', ')}
