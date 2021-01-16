@@ -15,19 +15,19 @@ export function MessageComponent(props: {message: Message}): JSX.Element {
         {'\n'}
         {message.from && (
           <Text>
-            From: {message.from}
+            {message.getFromAddresses()}
             {'\n'}
           </Text>
         )}
         {message.to && (
           <Text>
-            To: {message.to}
+            to: {message.getToNames()}
             {'\n'}
           </Text>
         )}
         {message.cc && (
           <Text>
-            CC: {message.cc}
+            cc: {message.getCcNames()}
             {'\n'}
           </Text>
         )}

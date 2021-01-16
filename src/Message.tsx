@@ -1,5 +1,9 @@
-import {defined} from './Base';
+import {defined, notNull} from './Base';
 import {decode} from './Base64Url';
+import * as emailAddresses from 'email-addresses';
+
+type AddressGroup = emailAddresses.ParsedMailbox | emailAddresses.ParsedGroup;
+type AddressList = AddressGroup[];
 
 function isToday(input: Date): boolean {
   const date = new Date(input);
@@ -39,9 +43,15 @@ export class Message {
   messageId?: string;
   _html?: string;
   _plain?: string;
+  private _parsedFrom: AddressList | null;
+  private _parsedTo: AddressList | null;
+  private _parsedCc: AddressList | null;
 
   constructor(message: gapi.client.gmail.Message) {
     this._rawMessage = message;
+    this._parsedFrom = null;
+    this._parsedTo = null;
+    this._parsedCc = null;
     // TODO: Do all parsing lazily.
     this._parseHeaders();
   }
@@ -96,6 +106,53 @@ export class Message {
     if (!this.date) {
       this.date = this._rawMessage.internalDate;
     }
+  }
+
+  _forEachAddress(
+    addressList: AddressList | null,
+    callback: (mailbox: emailAddresses.ParsedMailbox) => string,
+  ): string[] {
+    const addresses: string[] = [];
+    for (const groupOrMailbox of notNull(addressList)) {
+      const mailboxes =
+        'addresses' in groupOrMailbox
+          ? groupOrMailbox.addresses
+          : [defined(groupOrMailbox)];
+      for (const mailbox of mailboxes) {
+        addresses.push(callback(mailbox));
+      }
+    }
+    return addresses;
+  }
+
+  _formatParsedMailbox(mailbox: emailAddresses.ParsedMailbox): string {
+    // TODO: Make the name bold
+    return `${mailbox.name} <${mailbox.address}>`;
+  }
+
+  getFromAddresses(): string[] {
+    if (!this._parsedFrom) {
+      this._parsedFrom = emailAddresses.parseAddressList(defined(this.from));
+    }
+    return this._forEachAddress(this._parsedFrom, this._formatParsedMailbox);
+  }
+
+  _formatParsedName(mailbox: emailAddresses.ParsedMailbox): string {
+    return (mailbox.name || mailbox.address).split('@')[0];
+  }
+
+  getToNames(): string[] {
+    if (!this._parsedTo) {
+      this._parsedTo = emailAddresses.parseAddressList(defined(this.to));
+    }
+    return this._forEachAddress(this._parsedTo, this._formatParsedName);
+  }
+
+  getCcNames(): string[] {
+    if (!this._parsedCc) {
+      this._parsedCc = emailAddresses.parseAddressList(defined(this.cc));
+    }
+    return this._forEachAddress(this._parsedCc, this._formatParsedName);
   }
 
   formatDate(): string {
