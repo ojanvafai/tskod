@@ -113,7 +113,7 @@ function App(): JSX.Element {
           key={threadId}
           threadId={threadId}
           actions={threadActions}
-          cardSwipedAway={updateThreadListState}
+          onCardOffScreen={updateThreadListState}
           preventRenderMessages={index > 2}
         />
       );
