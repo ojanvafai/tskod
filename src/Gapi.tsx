@@ -1,3 +1,10 @@
+import {
+  GoogleSignin,
+  statusCodes,
+  User,
+} from '@react-native-community/google-signin';
+import {signInRealm} from './Sync';
+
 interface Json {
   [x: string]: string | number | boolean | Date | Json | JsonArray;
 }
@@ -5,8 +12,57 @@ type JsonArray = Array<string | number | boolean | Date | Json | JsonArray>;
 
 let accessToken: string;
 
-export function saveAccessToken(token: string): void {
-  accessToken = token;
+export async function login(): Promise<void> {
+  GoogleSignin.configure({
+    scopes: [
+      'https://www.googleapis.com/auth/gmail.modify',
+      'https://www.googleapis.com/auth/contacts.readonly',
+    ],
+    webClientId:
+      '957024671877-pmopl7t9j5vtieu207p56slhr7h1pkui.apps.googleusercontent.com', // client ID of type WEB for your server (needed to verify user ID and offline access)
+    iosClientId:
+      '957024671877-4eu314jmn3c60neao556ltfa025u9ao3.apps.googleusercontent.com', // [iOS] optional, if you want to specify the client ID of type iOS (otherwise, it is taken from GoogleService-Info.plist)
+    offlineAccess: true, // if you want to access Google API on behalf of the user FROM YOUR SERVER
+    //forceCodeForRefreshToken: true, // [Android] related to `serverAuthCode`, read the docs link below *.
+  });
+
+  await GoogleSignin.hasPlayServices();
+
+  let user: User | null = null;
+
+  try {
+    user = await GoogleSignin.signInSilently();
+  } catch (error) {
+    if (error.code !== statusCodes.SIGN_IN_REQUIRED) {
+      console.log('Sign in failed', JSON.stringify(error));
+      return;
+    }
+
+    try {
+      user = await GoogleSignin.signIn();
+    } catch (nestedError) {
+      console.log('Sign in failed', JSON.stringify(nestedError));
+      if (nestedError.code === statusCodes.SIGN_IN_CANCELLED) {
+        // user cancelled the login flow
+      } else if (nestedError.code === statusCodes.IN_PROGRESS) {
+        // operation (e.g. sign in) is in progress already
+      } else if (nestedError.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        // play services not available or outdated
+      } else {
+        // some other error happened
+      }
+    }
+  }
+
+  accessToken = (await GoogleSignin.getTokens()).accessToken;
+  console.log('Before realm login');
+  if (user !== null && user.serverAuthCode !== null) {
+    await signInRealm(user.serverAuthCode);
+  } else {
+    console.log('null user or auth code');
+    console.log(JSON.stringify(user));
+  }
+  console.log('After Realm Login');
 }
 
 function encodeParameters(
@@ -18,7 +74,7 @@ function encodeParameters(
     .join('&')}`;
 }
 
-function gapiFetch<T>({
+async function gapiFetch<T>({
   url,
   postBody,
   queryParameters,
@@ -49,7 +105,13 @@ function gapiFetch<T>({
   } else {
     options.method = 'GET';
   }
-  return fetch(fullUrl, options);
+  let response = await fetch(fullUrl, options);
+  // 401 happens when auth credentials expire (and probably in other cases too).
+  if (response.status === 401) {
+    await login();
+    response = await fetch(fullUrl, options);
+  }
+  return response;
 }
 
 async function gapiFetchJson<T>({
