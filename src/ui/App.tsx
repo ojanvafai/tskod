@@ -9,18 +9,13 @@ import {
 } from 'react-native';
 
 import {Card} from './Card';
-import {
-  archiveMessages,
-  fetchThreads,
-  applyLabelToMessages,
-  login,
-} from '../Gapi';
+import {archiveMessages, fetchThreads, modifyMessages, login} from '../Gapi';
 import {Message} from '../Message';
 import {defined} from '../Base';
 import {LabelName, Labels} from '../Labels';
 export interface ThreadActions {
-  archive: (messages: Message[]) => Promise<Response>;
-  keep: (messages: Message[]) => Promise<Response>;
+  archive: (messages: Message[]) => Promise<void>;
+  keep: (messages: Message[]) => Promise<void>;
 }
 
 interface ThreadsState {
@@ -87,15 +82,11 @@ function App(): JSX.Element {
 
   const threadActions: ThreadActions = {
     archive: (messages: Message[]) => {
-      return archiveMessages(messages.map((x) => defined(x.id)));
+      return archiveMessages(messages);
     },
-
     keep: async (messages: Message[]) => {
       const keepLabel = await Labels.getOrCreateLabel(LabelName.keep);
-      return applyLabelToMessages(
-        keepLabel.getId(),
-        messages.map((x) => defined(x.id)),
-      );
+      return modifyMessages(messages, [keepLabel.getId()], []);
     },
   };
 
