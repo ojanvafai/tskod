@@ -20,7 +20,7 @@ import Animated, {
   not,
 } from 'react-native-reanimated';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import {assertNotReached, defined} from '../Base';
+import {assert, defined} from '../Base';
 
 import {fetchMessageIdsAndLabels, fetchMessagesById} from '../Gapi';
 import {Message} from '../Message';
@@ -56,17 +56,14 @@ export function Card(props: CardProps): JSX.Element {
 
   // Take the swipe action immediately when the user lifts their finger in
   // parallel with swiping the card offscreen.
-  let hasSwiped = false;
+  const [hasSwiped, setHasSwiped] = useState(false);
 
   async function swipeLeft(): Promise<void> {
     if (hasSwiped) {
       return;
     }
-    hasSwiped = true;
-    if (!messages.length) {
-      // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
-      assertNotReached('Have not loaded message data yet.');
-    }
+    setHasSwiped(true);
+    assert(messages.length);
     await props.actions.archive(messages);
   }
 
@@ -74,11 +71,8 @@ export function Card(props: CardProps): JSX.Element {
     if (hasSwiped) {
       return;
     }
-    hasSwiped = true;
-    if (!messages.length) {
-      // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
-      assertNotReached('Have not loaded message data yet.');
-    }
+    setHasSwiped(true);
+    assert(messages.length);
     await props.actions.keep(messages);
   }
 
@@ -293,16 +287,13 @@ export function Card(props: CardProps): JSX.Element {
 
   let messageComponents;
   if (!props.preventRenderMessages && firstAndLastMessageContents.length) {
-    messageComponents = [
-      <MessageComponent
-        key={firstAndLastMessageContents[0].id}
-        message={firstAndLastMessageContents[0]}
-      />,
-    ];
+    messageComponents = firstAndLastMessageContents.map((x) => (
+      <MessageComponent key={x.id} message={x} />
+    ));
     if (messages.length > 1) {
       const elidedMessageCount = messages.length - 2;
-      messageComponents.push(
-        // Need to use a view because borders on only one side don't work on Text.
+      // Need to use a view because borders on only one side don't work on Text.
+      const divider = (
         <View key="messageCount" style={style.elidedMessageCount}>
           <Text>
             {elidedMessageCount > 0
@@ -311,18 +302,15 @@ export function Card(props: CardProps): JSX.Element {
                 }`
               : ' '}
           </Text>
-        </View>,
+        </View>
       );
-
-      const lastMessage = firstAndLastMessageContents[1];
-      messageComponents.push(
-        <MessageComponent key={lastMessage.id} message={lastMessage} />,
-      );
+      messageComponents.splice(1, 0, divider);
     }
   }
 
   return (
     <PanGestureHandler
+      enabled={firstAndLastMessageContents.length > 0}
       onGestureEvent={handleGesture}
       onHandlerStateChange={handleGesture}>
       {/* @ts-ignore the type doesn't allow position:absolute...the type seems to be wrong. */}
