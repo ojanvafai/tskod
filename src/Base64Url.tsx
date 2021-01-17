@@ -85,19 +85,12 @@ export function encodeFromByteArray(input: number[]): string {
   return output.join('');
 }
 
-export function decode(input: string): string {
+export function urlDecode(input: string): string {
   let output = '';
-  let chr1;
-  let chr2;
-  let chr3;
-  let enc1;
-  let enc2;
-  let enc3;
-  let enc4;
   let i = 0;
 
   // remove all characters that are not A-Z, a-z, 0-9, +, /, or =
-  const base64test = /[^A-Za-z0-9\-\_\=]/g;
+  const base64test = /[^A-Za-z0-9\-_=]/g;
   if (base64test.exec(input)) {
     throw new Error(
       'There were invalid base64 characters in the input text.\n' +
@@ -107,27 +100,27 @@ export function decode(input: string): string {
   }
 
   do {
-    enc1 = keyStr.indexOf(input.charAt(i++));
-    enc2 = keyStr.indexOf(input.charAt(i++));
-    enc3 = keyStr.indexOf(input.charAt(i++));
-    enc4 = keyStr.indexOf(input.charAt(i++));
+    const enc1 = keyStr.indexOf(input.charAt(i++));
+    const enc2 = keyStr.indexOf(input.charAt(i++));
+    const enc3 = keyStr.indexOf(input.charAt(i++));
+    const enc4 = keyStr.indexOf(input.charAt(i++));
 
     // eslint-disable-next-line no-bitwise
-    chr1 = (enc1 << 2) | (enc2 >> 4);
-    // eslint-disable-next-line no-bitwise
-    chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
-    // eslint-disable-next-line no-bitwise
-    chr3 = ((enc3 & 3) << 6) | enc4;
+    const chr1 = (enc1 << 2) | (enc2 >> 4);
 
     output = output + String.fromCharCode(chr1);
 
     if (enc3 !== 64) {
+      // eslint-disable-next-line no-bitwise
+      const chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
       output = output + String.fromCharCode(chr2);
     }
     if (enc4 !== 64) {
+      // eslint-disable-next-line no-bitwise
+      const chr3 = ((enc3 & 3) << 6) | enc4;
       output = output + String.fromCharCode(chr3);
     }
   } while (i < input.length);
 
-  return output;
+  return decodeURIComponent(escape(output));
 }

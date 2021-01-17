@@ -1,5 +1,5 @@
 import {defined, notNull} from './Base';
-import {decode} from './Base64Url';
+import {urlDecode} from './Base64Url';
 import * as emailAddresses from 'email-addresses';
 
 type AddressGroup = emailAddresses.ParsedMailbox | emailAddresses.ParsedGroup;
@@ -183,7 +183,7 @@ export class Message {
       return;
     }
 
-    const decoded = decode(data);
+    const decoded = urlDecode(data);
     const mimeType = payload.mimeType;
 
     // TODO: There's probably more mime types we need to handle.
