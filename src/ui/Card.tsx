@@ -30,7 +30,7 @@ import {MessageComponent} from './MessageComponent';
 interface CardProps {
   threadId: string;
   actions: ThreadActions;
-  cardSwipedAway: React.Dispatch<UpdateThreadListAction>;
+  onCardOffScreen: React.Dispatch<UpdateThreadListAction>;
   preventRenderMessages: boolean;
 }
 
@@ -40,8 +40,7 @@ const WINDOW_WIDTH = Dimensions.get('window').width + TOOLBAR_OFFSET;
 
 enum CurrentAction {
   None = 0,
-  SwipingRight,
-  SwipingLeft,
+  Swiping,
 }
 
 function randomSign(): number {
@@ -55,21 +54,31 @@ export function Card(props: CardProps): JSX.Element {
     setFirstAndLastMessageContents,
   ] = useState([] as Message[]);
 
+  // Take the swipe action immediately when the user lifts their finger in
+  // parallel with swiping the card offscreen.
+  let hasSwiped = false;
+
   async function swipeLeft(): Promise<void> {
+    if (hasSwiped) {
+      return;
+    }
+    hasSwiped = true;
     if (!messages.length) {
       // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
       assertNotReached('Have not loaded message data yet.');
     }
-    props.cardSwipedAway({removeThreadId: props.threadId});
     await props.actions.archive(messages);
   }
 
   async function swipeRight(): Promise<void> {
+    if (hasSwiped) {
+      return;
+    }
+    hasSwiped = true;
     if (!messages.length) {
       // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
       assertNotReached('Have not loaded message data yet.');
     }
-    props.cardSwipedAway({removeThreadId: props.threadId});
     await props.actions.keep(messages);
   }
 
@@ -117,10 +126,11 @@ export function Card(props: CardProps): JSX.Element {
                   config.toValue,
                   multiply(divide(panX, abs(panX)), WINDOW_WIDTH),
                 ),
+                [set(currentAction, CurrentAction.Swiping)],
                 cond(
                   greaterThan(panX, 0),
-                  [set(currentAction, CurrentAction.SwipingRight)],
-                  [set(currentAction, CurrentAction.SwipingLeft)],
+                  call([], swipeRight),
+                  call([], swipeLeft),
                 ),
               ],
               // Releasing without a swipe.
@@ -138,13 +148,15 @@ export function Card(props: CardProps): JSX.Element {
               ],
             ),
           ],
+          // TODO: This animation takes ~1.5s to finish after the card is
+          // already offscreen. Figure out how to abort early rather than
+          // waiting for the spring to settle.
           cond(springState.finished, [
             // Finished spring animation.
-            cond(eq(currentAction, CurrentAction.SwipingLeft), [
-              call([], swipeLeft),
-            ]),
-            cond(eq(currentAction, CurrentAction.SwipingRight), [
-              call([], swipeRight),
+            cond(eq(currentAction, CurrentAction.Swiping), [
+              call([], () =>
+                props.onCardOffScreen({removeThreadId: props.threadId}),
+              ),
             ]),
             set(currentAction, CurrentAction.None),
             stopClock(clock),
