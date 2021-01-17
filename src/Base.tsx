@@ -15,3 +15,10 @@ export function defined<T>(variable: T | undefined): T {
   }
   return variable;
 }
+
+export function notNull<T>(variable: T | null): T {
+  if (variable === null) {
+    throw new Error('This should never happen.');
+  }
+  return variable;
+}
