@@ -3,6 +3,8 @@ import {
   statusCodes,
   User,
 } from '@react-native-community/google-signin';
+import {defined} from './Base';
+import {Message} from './Message';
 import {signInRealm} from './Sync';
 
 interface Json {
@@ -55,14 +57,11 @@ export async function login(): Promise<void> {
   }
 
   accessToken = (await GoogleSignin.getTokens()).accessToken;
-  console.log('Before realm login');
   if (user !== null && user.serverAuthCode !== null) {
     await signInRealm(user.serverAuthCode);
   } else {
-    console.log('null user or auth code');
-    console.log(JSON.stringify(user));
+    console.log('null user or auth code', JSON.stringify(user));
   }
-  console.log('After Realm Login');
 }
 
 function encodeParameters(
@@ -132,28 +131,30 @@ const THREADS_URL = `${GMAIL_BASE_URL}/threads`;
 const MESSAGES_URL = `${GMAIL_BASE_URL}/messages`;
 const LABELS_URL = `${GMAIL_BASE_URL}/labels`;
 
-export function fetchThreads(
+export async function fetchThreads(
   query: string,
 ): Promise<gapi.client.gmail.ListThreadsResponse> {
-  return gapiFetchJson({
+  const response = await gapiFetchJson({
     url: THREADS_URL,
     queryParameters: {q: query},
   });
+  return response;
 }
 
-export function fetchMessageIdsAndLabels(
+export async function fetchMessageIdsAndLabels(
   threadId: string,
 ): Promise<gapi.client.gmail.Thread> {
-  return gapiFetchJson({
+  const response = await gapiFetchJson({
     url: `${THREADS_URL}/${threadId}`,
     queryParameters: {format: 'MINIMAL'},
   });
+  return response;
 }
 
-export function fetchMessageById(
+export async function fetchMessageById(
   messageId: string,
 ): Promise<gapi.client.gmail.Message> {
-  return gapiFetchJson({
+  const response = await gapiFetchJson({
     url: `${MESSAGES_URL}/${messageId}`,
     queryParameters: {
       // Fetching a new header involves adding it here and then parsing it in
@@ -161,6 +162,7 @@ export function fetchMessageById(
       metadataHeaders: 'subject,from,to,cc,date',
     },
   });
+  return response;
 }
 
 export function fetchMessagesById(
@@ -177,44 +179,87 @@ interface BatchModifyData {
   removeLabelIds: string[];
 }
 
-// Batch modify has no response body, but still get's the wrapper response JSON.
-export function archiveMessages(messageIds: string[]): Promise<Response> {
-  return gapiFetch<BatchModifyData>({
-    url: `${MESSAGES_URL}/batchModify`,
-    postBody: {
-      ids: messageIds,
-      addLabelIds: [],
-      removeLabelIds: ['INBOX'],
-    },
-  });
-}
-
-export function fetchLabels(): Promise<gapi.client.gmail.ListLabelsResponse> {
-  return gapiFetchJson({
+export async function fetchLabels(): Promise<gapi.client.gmail.ListLabelsResponse> {
+  const response = await gapiFetchJson({
     url: LABELS_URL,
   });
+  return response;
 }
 
-export function createLabel(
+export async function createLabel(
   labelData: gapi.client.gmail.Label,
 ): Promise<gapi.client.gmail.Label> {
-  return gapiFetchJson({
+  const response = await gapiFetchJson({
     url: LABELS_URL,
     postBody: labelData,
   });
+  return response;
+}
+
+async function modifyThread(
+  threadId: string,
+  addLabelIds: string[],
+  removeLabelIds: string[],
+): Promise<gapi.client.gmail.Thread> {
+  const response = await gapiFetchJson({
+    url: `${THREADS_URL}/${threadId}/modify`,
+    postBody: {
+      addLabelIds: addLabelIds,
+      removeLabelIds: removeLabelIds,
+    },
+  });
+  return response;
 }
 
 // Batch modify has no response body, but still get's the wrapper response JSON.
-export function applyLabelToMessages(
-  labelId: string,
-  messageIds: string[],
-): Promise<Response> {
-  return gapiFetch<BatchModifyData>({
+export async function modifyMessages(
+  messages: Message[],
+  addLabelIds: string[],
+  removeLabelIds: string[],
+): Promise<void> {
+  const messageIds = messages.map((x) => x.id);
+  await gapiFetch<BatchModifyData>({
     url: `${MESSAGES_URL}/batchModify`,
     postBody: {
       ids: messageIds,
-      addLabelIds: [labelId],
-      removeLabelIds: [],
+      addLabelIds: addLabelIds,
+      removeLabelIds: removeLabelIds,
     },
   });
+
+  // Gmail API has bugs where there are messages that appear via threads.get,
+  // but not messages.get. In those cases, modifying all the messages in the
+  // thread isn't sufficient and we need to modify the whole thread. Try to
+  // minimize the race condition of a new message coming in and being modified
+  // as much as possible by fetching messages again to see if the modify didn't
+  // take and only applying the modify to the whole thread if no new messages
+  // have come in. This does not fix
+  // https://issuetracker.google.com/issues/122167541 which probably needs to be
+  // handled when pulling in the thread list by checking if the thread is
+  // actually in the inbox as per the labels on its messages.
+  const threadId = messages[0].threadId;
+  const freshMessageResponse = await fetchMessageIdsAndLabels(threadId);
+  const freshMessages = defined(freshMessageResponse.messages);
+
+  const unknownMessages = freshMessages.filter(
+    (x) => !messageIds.includes(defined(x.id)),
+  );
+  // New messages have come in since we initiated this modify action, so don't
+  // modify the whole thread and live with this modify pontentially having
+  // silently failed.
+  if (unknownMessages.length) {
+    return;
+  }
+
+  const allLabels = new Set(freshMessages.flatMap((x) => defined(x.labelIds)));
+  if (
+    addLabelIds.some((x) => !allLabels.has(x)) ||
+    removeLabelIds.some((x) => allLabels.has(x))
+  ) {
+    await modifyThread(threadId, addLabelIds, removeLabelIds);
+  }
+}
+
+export function archiveMessages(messages: Message[]): Promise<void> {
+  return modifyMessages(messages, [], ['INBOX']);
 }
