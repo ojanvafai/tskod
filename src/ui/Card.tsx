@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import {StyleSheet, Text, Dimensions, View} from 'react-native';
 import {PanGestureHandler, State} from 'react-native-gesture-handler';
 import Animated, {
@@ -174,6 +174,8 @@ export function Card(props: CardProps): JSX.Element {
   const [clock] = useState(new Clock());
   const panDrawX = useAnimation(panX, velocityX, clock, panState);
 
+  const onCardOffScreen = useCallback(props.onCardOffScreen, []);
+
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async (): Promise<void> => {
@@ -193,7 +195,7 @@ export function Card(props: CardProps): JSX.Element {
           }
           if (!hasMessageInInbox) {
             await modifyThread(props.threadId, [], ['INBOX']);
-            props.onCardOffScreen({removeThreadId: props.threadId});
+            onCardOffScreen({removeThreadId: props.threadId});
           }
           messageIdsToFetch.push(defined(messageIds[messageIds.length - 1].id));
         }
@@ -203,7 +205,7 @@ export function Card(props: CardProps): JSX.Element {
         );
       }
     })();
-  }, [props.threadId, props.onCardOffScreen]);
+  }, [props.threadId, onCardOffScreen]);
 
   const handleGesture = Animated.event(
     [
