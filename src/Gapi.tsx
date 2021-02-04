@@ -134,7 +134,7 @@ const LABELS_URL = `${GMAIL_BASE_URL}/labels`;
 export async function fetchThreads(
   query: string,
 ): Promise<gapi.client.gmail.ListThreadsResponse> {
-  const response = await gapiFetchJson({
+  const response: gapi.client.gmail.ListThreadsResponse = await gapiFetchJson({
     url: THREADS_URL,
     queryParameters: {q: query},
   });
@@ -196,7 +196,7 @@ export async function createLabel(
   return response;
 }
 
-async function modifyThread(
+export async function modifyThread(
   threadId: string,
   addLabelIds: string[],
   removeLabelIds: string[],

@@ -22,7 +22,11 @@ import Animated, {
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import {assert, defined} from '../Base';
 
-import {fetchMessageIdsAndLabels, fetchMessagesById} from '../Gapi';
+import {
+  fetchMessageIdsAndLabels,
+  fetchMessagesById,
+  modifyThread,
+} from '../Gapi';
 import {Message} from '../Message';
 import {UpdateThreadListAction, ThreadActions} from './App';
 import {MessageComponent} from './MessageComponent';
@@ -175,10 +179,22 @@ export function Card(props: CardProps): JSX.Element {
     (async (): Promise<void> => {
       const messageIds = (await fetchMessageIdsAndLabels(props.threadId))
         .messages;
+
       if (messageIds !== undefined) {
         setMessages(messageIds.map((x) => new Message(x)));
         const messageIdsToFetch = [defined(messageIds[0].id)];
         if (messageIds.length > 1) {
+          let hasMessageInInbox = false;
+          for (const messageId of messageIds) {
+            if (messageId.labelIds?.includes('INBOX')) {
+              hasMessageInInbox = true;
+              break;
+            }
+          }
+          if (!hasMessageInInbox) {
+            await modifyThread(props.threadId, [], ['INBOX']);
+            props.onCardOffScreen({removeThreadId: props.threadId});
+          }
           messageIdsToFetch.push(defined(messageIds[messageIds.length - 1].id));
         }
         const messageContentsData = await fetchMessagesById(messageIdsToFetch);
@@ -187,7 +203,7 @@ export function Card(props: CardProps): JSX.Element {
         );
       }
     })();
-  }, [props.threadId]);
+  }, [props.threadId, props.onCardOffScreen]);
 
   const handleGesture = Animated.event(
     [
