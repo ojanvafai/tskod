@@ -11,20 +11,22 @@ import {
 import {Card} from './Card';
 import {archiveMessages, fetchThreads, modifyMessages, login} from '../Gapi';
 import {Message} from '../Message';
+import {Thread} from '../Thread';
 import {defined} from '../Base';
 import {LabelName, Labels} from '../Labels';
+
 export interface ThreadActions {
   archive: (messages: Message[]) => Promise<void>;
   keep: (messages: Message[]) => Promise<void>;
 }
 
 interface ThreadsState {
-  threads: gapi.client.gmail.Thread[];
+  threads: Thread[];
 }
 
 export interface UpdateThreadListAction {
   removeThreadId?: string;
-  threads?: gapi.client.gmail.Thread[];
+  threads?: Thread[];
 }
 
 enum LoadState {
@@ -55,16 +57,47 @@ function App(): JSX.Element {
 
   const [loadingThreads, setLoadingThreads] = useState(LoadState.initial);
 
+  async function* fetchThreadsWithMetadata(): AsyncGenerator<Thread> {
+    // TODO: Sort by date.
+    const threads = (await fetchThreads(`in:inbox -in:${LabelName.keep}`))
+      .threads;
+
+    console.log(threads);
+
+    if (!threads) {
+      console.log('Likely auth issue.');
+      return;
+    }
+
+    for (const rawThread of threads) {
+      const thread = new Thread(rawThread);
+      await thread.fetchMessages();
+      yield thread;
+      console.log('Yielded a thread with messages ' + thread.messages);
+    }
+  }
+
   useEffect(() => {
+    console.log('USEEFFECT');
     if (loadingThreads !== LoadState.loading) {
+      console.log('NOT LOADING');
       return;
     }
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async (): Promise<void> => {
-      const threads = (await fetchThreads(`in:inbox -in:${LabelName.keep}`))
-        .threads;
-      if (threads) {
-        // TODO: Fetch message data to get the dates so we can sort by date.
+      console.log('ABOUT TO FETCH THREADS');
+      const threads: Thread[] = [];
+      // TODO - convert to `for await`. See https://github.com/facebook/react-native/issues/27432
+      const threadGenerator = fetchThreadsWithMetadata();
+      while (true) {
+        const generatorResult = await threadGenerator.next();
+        if (generatorResult.done) {
+          break;
+        }
+        const thread = generatorResult.value;
+
+        threads.push(thread);
+        console.log('UPDATING STATE TO ');
         updateThreadListState({threads});
       }
       setLoadingThreads(LoadState.loaded);
@@ -95,20 +128,26 @@ function App(): JSX.Element {
   // and prevent rendering their messages to avoid getting stalled on slow
   // network.
   const numCardsRendered = 10;
+
+  console.log('THREADS ARE');
+  console.log(threadListState.threads);
+
   const cards = threadListState.threads
     .slice(0, numCardsRendered)
-    .map((x, index) => {
-      const threadId = defined(x.id);
+    .map((thread, index) => {
+      const threadId = thread.id;
       return (
         <Card
           key={threadId}
-          threadId={threadId}
+          thread={thread}
           actions={threadActions}
           onCardOffScreen={updateThreadListState}
           preventRenderMessages={index > 2}
         />
       );
     });
+
+  console.log('LENGTH OF CARDS IS ' + cards.length);
 
   // First card is at the bottom of the visual stack and last card is at the
   // top. So reverse so we can have the first thread show up visibly at the top
@@ -125,6 +164,7 @@ function App(): JSX.Element {
     <React.Fragment>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={style.view}>
+        <Text>{cards.length}</Text>
         {/* Wrapper View prevents absolutely positioned Cards from escaping the safe area. */}
         <View style={style.view}>
           {cards.length ? (
@@ -132,7 +172,7 @@ function App(): JSX.Element {
           ) : (
             <Text>
               {loadingThreads !== LoadState.loaded ? (
-                'Loading...'
+                'Loading...' + cards.length
               ) : (
                 <Button
                   title="Check for new messages"

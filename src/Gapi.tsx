@@ -134,7 +134,7 @@ const LABELS_URL = `${GMAIL_BASE_URL}/labels`;
 export async function fetchThreads(
   query: string,
 ): Promise<gapi.client.gmail.ListThreadsResponse> {
-  const response: gapi.client.gmail.ListThreadsResponse = await gapiFetchJson({
+  const response = await gapiFetchJson({
     url: THREADS_URL,
     queryParameters: {q: query},
   });
@@ -165,7 +165,7 @@ export async function fetchMessageById(
   return response;
 }
 
-export function fetchMessagesById(
+export function fetchMessagesByIds(
   messageIds: string[],
 ): Promise<gapi.client.gmail.Message[]> {
   // TODO: Batch this per https://developers.google.com/gmail/api/guides/batch

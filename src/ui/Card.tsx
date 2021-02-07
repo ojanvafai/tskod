@@ -1,6 +1,7 @@
 import React, {useEffect, useState, useCallback} from 'react';
 import {StyleSheet, Text, Dimensions, View} from 'react-native';
 import {PanGestureHandler, State} from 'react-native-gesture-handler';
+import {Thread} from '../Thread';
 import Animated, {
   cond,
   eq,
@@ -20,19 +21,13 @@ import Animated, {
   not,
 } from 'react-native-reanimated';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import {assert, defined} from '../Base';
-
-import {
-  fetchMessageIdsAndLabels,
-  fetchMessagesById,
-  modifyThread,
-} from '../Gapi';
+import {assert} from '../Base';
 import {Message} from '../Message';
 import {UpdateThreadListAction, ThreadActions} from './App';
 import {MessageComponent} from './MessageComponent';
 
 interface CardProps {
-  threadId: string;
+  thread: Thread;
   actions: ThreadActions;
   onCardOffScreen: React.Dispatch<UpdateThreadListAction>;
   preventRenderMessages: boolean;
@@ -153,7 +148,7 @@ export function Card(props: CardProps): JSX.Element {
             // Finished spring animation.
             cond(eq(currentAction, CurrentAction.Swiping), [
               call([], () =>
-                props.onCardOffScreen({removeThreadId: props.threadId}),
+                props.onCardOffScreen({removeThreadId: props.thread.id}),
               ),
             ]),
             set(currentAction, CurrentAction.None),
@@ -176,36 +171,11 @@ export function Card(props: CardProps): JSX.Element {
 
   const onCardOffScreen = useCallback(props.onCardOffScreen, []);
 
+  // TODO - remove useEffect
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    (async (): Promise<void> => {
-      const messageIds = (await fetchMessageIdsAndLabels(props.threadId))
-        .messages;
-
-      if (messageIds !== undefined) {
-        setMessages(messageIds.map((x) => new Message(x)));
-        const messageIdsToFetch = [defined(messageIds[0].id)];
-        if (messageIds.length > 1) {
-          let hasMessageInInbox = false;
-          for (const messageId of messageIds) {
-            if (messageId.labelIds?.includes('INBOX')) {
-              hasMessageInInbox = true;
-              break;
-            }
-          }
-          if (!hasMessageInInbox) {
-            await modifyThread(props.threadId, [], ['INBOX']);
-            onCardOffScreen({removeThreadId: props.threadId});
-          }
-          messageIdsToFetch.push(defined(messageIds[messageIds.length - 1].id));
-        }
-        const messageContentsData = await fetchMessagesById(messageIdsToFetch);
-        setFirstAndLastMessageContents(
-          messageContentsData.map((x) => new Message(x)),
-        );
-      }
-    })();
-  }, [props.threadId, onCardOffScreen]);
+    setMessages(props.thread.messages);
+    setFirstAndLastMessageContents(props.thread.messages);
+  }, [props.thread, onCardOffScreen]);
 
   const handleGesture = Animated.event(
     [
