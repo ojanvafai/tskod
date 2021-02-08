@@ -4,48 +4,52 @@ import {Message} from './Message';
 
 export class Thread {
   private _rawThread: gapi.client.gmail.Thread;
-  private _messages: Message[];
+  private _messages: Message[] | undefined;
+  private _firstAndLastMessages: Message[] | undefined;
 
   constructor(thread: gapi.client.gmail.Thread) {
     this._rawThread = thread;
-    this._messages = [];
+    this._messages = undefined;
+    this._firstAndLastMessages = undefined;
   }
 
   get id(): string {
-    console.log('GETTING ID');
-    const id = defined(this._rawThread.id);
-    console.log('GOT ID');
-    return id;
+    return defined(this._rawThread.id);
   }
 
   get messages(): Message[] {
-    return this._messages;
+    return defined(this._messages);
+  }
+
+  get firstAndLastMessages(): Message[] | undefined {
+    return this._firstAndLastMessages;
+  }
+
+  hasMessagesInInbox(): boolean {
+    for (const message of defined(this.messages)) {
+      if (message.labelIds.includes('INBOX')) {
+        return true;
+      }
+    }
+    return false;
   }
 
   async fetchMessages(): Promise<void> {
-    const messageIds = defined(
-      (await fetchMessageIdsAndLabels(this.id)).messages,
+    this._rawThread = defined(await fetchMessageIdsAndLabels(this.id));
+    const messages = defined(this._rawThread.messages).map(
+      (x) => new Message(x),
     );
+    this._messages = messages;
 
-    /*if (messages.length > 1) {
-          let hasMessageInInbox = false;
-          for (const messageId of messageIds) {
-            if (messageId.labelIds?.includes('INBOX')) {
-              hasMessageInInbox = true;
-              break;
-            }
-          }
-          if (!hasMessageInInbox) {
-            await modifyThread(props.threadId, [], ['INBOX']);
-            onCardOffScreen({removeThreadId: props.threadId});
-          }*/
-    //messageIdsToFetch.push(defined(messageIds[messageIds.length - 1].id));
-    //}
-    //const messageContentsData = await fetchMessagesByIds(messageIdsToFetch);
+    const messageIdsToFetch = [defined(messages[0].id)];
+    if (messages.length > 1) {
+      messageIdsToFetch.push(defined(messages[messages.length - 1].id));
+    }
 
-    const rawMessages = await fetchMessagesByIds(
-      messageIds.map((x) => defined(x.id)),
+    const rawFirstAndLastMessages = await fetchMessagesByIds(messageIdsToFetch);
+
+    this._firstAndLastMessages = rawFirstAndLastMessages.map(
+      (x) => new Message(x),
     );
-    this._messages = rawMessages.map((x) => new Message(x));
   }
 }

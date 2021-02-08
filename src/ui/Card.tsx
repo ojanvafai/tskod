@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useState} from 'react';
 import {StyleSheet, Text, Dimensions, View} from 'react-native';
 import {PanGestureHandler, State} from 'react-native-gesture-handler';
 import {Thread} from '../Thread';
@@ -47,11 +47,10 @@ function randomSign(): number {
 }
 
 export function Card(props: CardProps): JSX.Element {
-  const [messages, setMessages] = useState([] as Message[]);
-  const [
-    firstAndLastMessageContents,
-    setFirstAndLastMessageContents,
-  ] = useState([] as Message[]);
+  const messages: Message[] = props.thread.messages;
+  const firstAndLastMessages = props.thread.firstAndLastMessages
+    ? props.thread.firstAndLastMessages
+    : [];
 
   // Take the swipe action immediately when the user lifts their finger in
   // parallel with swiping the card offscreen.
@@ -169,14 +168,6 @@ export function Card(props: CardProps): JSX.Element {
   const [clock] = useState(new Clock());
   const panDrawX = useAnimation(panX, velocityX, clock, panState);
 
-  const onCardOffScreen = useCallback(props.onCardOffScreen, []);
-
-  // TODO - remove useEffect
-  useEffect(() => {
-    setMessages(props.thread.messages);
-    setFirstAndLastMessageContents(props.thread.messages);
-  }, [props.thread, onCardOffScreen]);
-
   const handleGesture = Animated.event(
     [
       {
@@ -269,13 +260,13 @@ export function Card(props: CardProps): JSX.Element {
     },
   });
 
-  const subject = firstAndLastMessageContents.length ? (
-    <Text style={style.subject}>{firstAndLastMessageContents[0].subject}</Text>
+  const subject = firstAndLastMessages.length ? (
+    <Text style={style.subject}>{firstAndLastMessages[0].subject}</Text>
   ) : undefined;
 
   let messageComponents;
-  if (!props.preventRenderMessages && firstAndLastMessageContents.length) {
-    messageComponents = firstAndLastMessageContents.map((x) => (
+  if (!props.preventRenderMessages && firstAndLastMessages.length) {
+    messageComponents = firstAndLastMessages.map((x) => (
       <MessageComponent key={x.id} message={x} />
     ));
     if (messages.length > 1) {
@@ -298,7 +289,7 @@ export function Card(props: CardProps): JSX.Element {
 
   return (
     <PanGestureHandler
-      enabled={firstAndLastMessageContents.length > 0}
+      enabled={firstAndLastMessages.length > 0}
       onGestureEvent={handleGesture}
       onHandlerStateChange={handleGesture}>
       {/* @ts-ignore the type doesn't allow position:absolute...the type seems to be wrong. */}

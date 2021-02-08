@@ -9,11 +9,17 @@ import {
 } from 'react-native';
 
 import {Card} from './Card';
-import {archiveMessages, fetchThreads, modifyMessages, login} from '../Gapi';
+import {
+  archiveMessages,
+  fetchThreads,
+  modifyMessages,
+  login,
+  modifyThread,
+} from '../Gapi';
 import {Message} from '../Message';
 import {Thread} from '../Thread';
-import {defined} from '../Base';
 import {LabelName, Labels} from '../Labels';
+import {defined} from '../Base';
 
 export interface ThreadActions {
   archive: (messages: Message[]) => Promise<void>;
@@ -62,30 +68,23 @@ function App(): JSX.Element {
     const threads = (await fetchThreads(`in:inbox -in:${LabelName.keep}`))
       .threads;
 
-    console.log(threads);
-
-    if (!threads) {
-      console.log('Likely auth issue.');
-      return;
-    }
-
-    for (const rawThread of threads) {
+    for (const rawThread of defined(threads)) {
       const thread = new Thread(rawThread);
       await thread.fetchMessages();
+      if (!thread.hasMessagesInInbox()) {
+        await modifyThread(thread.id, [], ['INBOX']);
+      }
+
       yield thread;
-      console.log('Yielded a thread with messages ' + thread.messages);
     }
   }
 
   useEffect(() => {
-    console.log('USEEFFECT');
     if (loadingThreads !== LoadState.loading) {
-      console.log('NOT LOADING');
       return;
     }
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async (): Promise<void> => {
-      console.log('ABOUT TO FETCH THREADS');
       const threads: Thread[] = [];
       // TODO - convert to `for await`. See https://github.com/facebook/react-native/issues/27432
       const threadGenerator = fetchThreadsWithMetadata();
@@ -97,7 +96,6 @@ function App(): JSX.Element {
         const thread = generatorResult.value;
 
         threads.push(thread);
-        console.log('UPDATING STATE TO ');
         updateThreadListState({threads});
       }
       setLoadingThreads(LoadState.loaded);
@@ -129,9 +127,6 @@ function App(): JSX.Element {
   // network.
   const numCardsRendered = 10;
 
-  console.log('THREADS ARE');
-  console.log(threadListState.threads);
-
   const cards = threadListState.threads
     .slice(0, numCardsRendered)
     .map((thread, index) => {
@@ -146,8 +141,6 @@ function App(): JSX.Element {
         />
       );
     });
-
-  console.log('LENGTH OF CARDS IS ' + cards.length);
 
   // First card is at the bottom of the visual stack and last card is at the
   // top. So reverse so we can have the first thread show up visibly at the top
@@ -164,7 +157,6 @@ function App(): JSX.Element {
     <React.Fragment>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={style.view}>
-        <Text>{cards.length}</Text>
         {/* Wrapper View prevents absolutely positioned Cards from escaping the safe area. */}
         <View style={style.view}>
           {cards.length ? (
@@ -172,7 +164,7 @@ function App(): JSX.Element {
           ) : (
             <Text>
               {loadingThreads !== LoadState.loaded ? (
-                'Loading...' + cards.length
+                'Loading...'
               ) : (
                 <Button
                   title="Check for new messages"

@@ -70,6 +70,10 @@ export class Message {
     return defined(this._rawMessage.threadId);
   }
 
+  get labelIds(): string[] {
+    return defined(this._rawMessage.labelIds);
+  }
+
   private _parseHeaders(): void {
     const headers = this._rawMessage.payload?.headers;
     // We don't have headers when we fetch only the message ID and labels.

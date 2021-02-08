@@ -107,6 +107,7 @@ async function gapiFetch<T>({
   let response = await fetch(fullUrl, options);
   // 401 happens when auth credentials expire (and probably in other cases too).
   if (response.status === 401) {
+    console.log('Retrying credentials');
     await login();
     response = await fetch(fullUrl, options);
   }
