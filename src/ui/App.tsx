@@ -48,7 +48,7 @@ function App(): JSX.Element {
   ): ThreadsState {
     if (action.removeThreadId) {
       return {
-        threads: state.threads.filter((x) => x.id !== action.removeThreadId),
+        threads: state.threads.filter((x) => x.id() !== action.removeThreadId),
       };
     }
     if (action.threads) {
@@ -72,7 +72,8 @@ function App(): JSX.Element {
       const thread = new Thread(rawThread);
       await thread.fetchMessages();
       if (!thread.hasMessagesInInbox()) {
-        await modifyThread(thread.id, [], ['INBOX']);
+        await modifyThread(thread.id(), [], ['INBOX']);
+        continue;
       }
 
       yield thread;
@@ -130,7 +131,7 @@ function App(): JSX.Element {
   const cards = threadListState.threads
     .slice(0, numCardsRendered)
     .map((thread, index) => {
-      const threadId = thread.id;
+      const threadId = thread.id();
       return (
         <Card
           key={threadId}

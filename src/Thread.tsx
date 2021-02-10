@@ -13,37 +13,33 @@ export class Thread {
     this._firstAndLastMessages = undefined;
   }
 
-  get id(): string {
+  id(): string {
     return defined(this._rawThread.id);
   }
 
-  get messages(): Message[] {
+  messages(): Message[] {
     return defined(this._messages);
   }
 
-  get firstAndLastMessages(): Message[] | undefined {
+  firstAndLastMessages(): Message[] | undefined {
     return this._firstAndLastMessages;
   }
 
   hasMessagesInInbox(): boolean {
-    for (const message of defined(this.messages)) {
-      if (message.labelIds.includes('INBOX')) {
-        return true;
-      }
-    }
-    return false;
+    return this.messages()?.some((x) => x.labelIds().includes('INBOX'));
   }
 
   async fetchMessages(): Promise<void> {
-    this._rawThread = defined(await fetchMessageIdsAndLabels(this.id));
-    const messages = defined(this._rawThread.messages).map(
-      (x) => new Message(x),
-    );
+    this._rawThread = await fetchMessageIdsAndLabels(this.id());
+    const messages = this._rawThread.messages?.map((x) => new Message(x));
     this._messages = messages;
 
-    const messageIdsToFetch = [defined(messages[0].id)];
-    if (messages.length > 1) {
-      messageIdsToFetch.push(defined(messages[messages.length - 1].id));
+    const messageIdsToFetch: string[] = [];
+    if (messages?.length) {
+      messageIdsToFetch.push(messages?.[0]?.id());
+      if (messages.length > 1) {
+        messageIdsToFetch.push(messages?.[messages.length - 1].id());
+      }
     }
 
     const rawFirstAndLastMessages = await fetchMessagesByIds(messageIdsToFetch);
