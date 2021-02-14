@@ -20,6 +20,7 @@ import {Message} from '../Message';
 import {Thread} from '../Thread';
 import {LabelName, Labels} from '../Labels';
 import {defined} from '../Base';
+import {GoogleSignin} from '@react-native-community/google-signin';
 
 export interface ThreadActions {
   archive: (messages: Message[]) => Promise<void>;
@@ -72,10 +73,12 @@ function App(): JSX.Element {
       const thread = new Thread(rawThread);
       await thread.fetchMessages();
       if (!thread.hasMessagesInInbox()) {
-        await modifyThread(thread.id(), [], ['INBOX']);
+        console.log('SKIPPING');
+        //await modifyThread(thread.id(), [], ['INBOX']);
         continue;
       }
 
+      console.log('YIELD');
       yield thread;
     }
   }
@@ -142,6 +145,8 @@ function App(): JSX.Element {
         />
       );
     });
+
+  console.log('CARDS LENGTH ' + cards.length);
 
   // First card is at the bottom of the visual stack and last card is at the
   // top. So reverse so we can have the first thread show up visibly at the top

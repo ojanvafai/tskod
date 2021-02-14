@@ -25,7 +25,7 @@ export async function login(): Promise<void> {
     iosClientId:
       '957024671877-4eu314jmn3c60neao556ltfa025u9ao3.apps.googleusercontent.com', // [iOS] optional, if you want to specify the client ID of type iOS (otherwise, it is taken from GoogleService-Info.plist)
     offlineAccess: true, // if you want to access Google API on behalf of the user FROM YOUR SERVER
-    //forceCodeForRefreshToken: true, // [Android] related to `serverAuthCode`, read the docs link below *.
+    forceCodeForRefreshToken: false, // [Android] related to `serverAuthCode`, read the docs link below *.
   });
 
   await GoogleSignin.hasPlayServices();
@@ -218,7 +218,7 @@ export async function modifyMessages(
   addLabelIds: string[],
   removeLabelIds: string[],
 ): Promise<void> {
-  const messageIds = messages.map((x) => x.id);
+  const messageIds = messages.map((x) => x.id());
   await gapiFetch<BatchModifyData>({
     url: `${MESSAGES_URL}/batchModify`,
     postBody: {
@@ -238,7 +238,7 @@ export async function modifyMessages(
   // https://issuetracker.google.com/issues/122167541 which probably needs to be
   // handled when pulling in the thread list by checking if the thread is
   // actually in the inbox as per the labels on its messages.
-  const threadId = messages[0].threadId;
+  const threadId = messages[0].threadId();
   const freshMessageResponse = await fetchMessageIdsAndLabels(threadId);
   const freshMessages = defined(freshMessageResponse.messages);
 
