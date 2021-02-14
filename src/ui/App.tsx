@@ -58,7 +58,6 @@ function App(): JSX.Element {
     (async (): Promise<void> => {
       const namesToExclude = Object.values(LabelName).join('" -in:"');
       const query = `in:inbox -in:chats -in:"${namesToExclude}"`;
-      console.log(query);
       const threads = (await fetchThreads(query)).threads;
       if (threads) {
         // TODO: Fetch message data to get the dates so we can sort by date.
