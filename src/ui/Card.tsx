@@ -22,14 +22,18 @@ import Animated, {
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import {assert, defined} from '../Base';
 
-import {fetchMessageIdsAndLabels, fetchMessagesById} from '../Gapi';
+import {
+  fetchMessageIdsAndLabels,
+  fetchMessagesById,
+  modifyMessages,
+} from '../Gapi';
+import {LabelName, Labels} from '../Labels';
 import {Message} from '../Message';
-import {UpdateThreadListAction, ThreadActions} from './App';
+import {UpdateThreadListAction} from './App';
 import {MessageComponent} from './MessageComponent';
 
 interface CardProps {
   threadId: string;
-  actions: ThreadActions;
   onCardOffScreen: React.Dispatch<UpdateThreadListAction>;
   preventRenderMessages: boolean;
 }
@@ -58,22 +62,28 @@ export function Card(props: CardProps): JSX.Element {
   // parallel with swiping the card offscreen.
   const [hasSwiped, setHasSwiped] = useState(false);
 
-  async function swipeLeft(): Promise<void> {
+  async function handleSwipe(
+    addLabelIds: string[],
+    removeLabelIds: string[],
+  ): Promise<void> {
     if (hasSwiped) {
       return;
     }
     setHasSwiped(true);
     assert(messages.length);
-    await props.actions.archive(messages);
+    await modifyMessages(messages, addLabelIds, removeLabelIds);
+  }
+
+  async function swipeLeft(): Promise<void> {
+    await handleSwipe([], ['INBOX']);
   }
 
   async function swipeRight(): Promise<void> {
-    if (hasSwiped) {
-      return;
-    }
-    setHasSwiped(true);
-    assert(messages.length);
-    await props.actions.keep(messages);
+    const [keep, emptyDaily] = await Promise.all([
+      Labels.getOrCreateLabel(LabelName.keep),
+      Labels.getOrCreateLabel(LabelName.emptyDaily),
+    ]);
+    await handleSwipe([keep.getId(), emptyDaily.getId()], []);
   }
 
   function useAnimation(
@@ -268,6 +278,9 @@ export function Card(props: CardProps): JSX.Element {
       justifyContent: 'center',
       flex: 0,
     },
+    buttonText: {
+      textAlign: 'center',
+    },
     subject: {
       fontWeight: 'bold',
       fontSize: 16,
@@ -320,12 +333,14 @@ export function Card(props: CardProps): JSX.Element {
           {messageComponents}
           <View style={[style.toolbar, style.right]}>
             <View style={style.toolbarButton}>
-              <Text>archive</Text>
+              <Text style={style.buttonText}>archive</Text>
             </View>
           </View>
           <View style={[style.toolbar, style.left]}>
             <View style={style.toolbarButton}>
-              <Text>keep</Text>
+              <Text style={style.buttonText}>
+                {LabelName.emptyDaily.split('/')[2]}
+              </Text>
             </View>
           </View>
         </View>
