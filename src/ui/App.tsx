@@ -9,14 +9,9 @@ import {
 } from 'react-native';
 
 import {Card} from './Card';
-import {archiveMessages, fetchThreads, modifyMessages, login} from '../Gapi';
-import {Message} from '../Message';
+import {fetchThreads, login} from '../Gapi';
 import {defined} from '../Base';
 import {LabelName, Labels} from '../Labels';
-export interface ThreadActions {
-  archive: (messages: Message[]) => Promise<void>;
-  keep: (messages: Message[]) => Promise<void>;
-}
 
 interface ThreadsState {
   threads: gapi.client.gmail.Thread[];
@@ -61,8 +56,9 @@ function App(): JSX.Element {
     }
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async (): Promise<void> => {
-      const threads = (await fetchThreads(`in:inbox -in:${LabelName.keep}`))
-        .threads;
+      const namesToExclude = Object.values(LabelName).join('" -in:"');
+      const query = `in:inbox -in:chats -in:"${namesToExclude}"`;
+      const threads = (await fetchThreads(query)).threads;
       if (threads) {
         // TODO: Fetch message data to get the dates so we can sort by date.
         updateThreadListState({threads});
@@ -80,16 +76,6 @@ function App(): JSX.Element {
     })();
   }, []);
 
-  const threadActions: ThreadActions = {
-    archive: (messages: Message[]) => {
-      return archiveMessages(messages);
-    },
-    keep: async (messages: Message[]) => {
-      const keepLabel = await Labels.getOrCreateLabel(LabelName.keep);
-      return modifyMessages(messages, [keepLabel.getId()], []);
-    },
-  };
-
   // TODO: Once we take message fetching out of Card creation, only prerender
   // one card below the most recently swiped card. Until then, render more cards
   // and prevent rendering their messages to avoid getting stalled on slow
@@ -103,7 +89,6 @@ function App(): JSX.Element {
         <Card
           key={threadId}
           threadId={threadId}
-          actions={threadActions}
           onCardOffScreen={updateThreadListState}
           preventRenderMessages={index > 2}
         />

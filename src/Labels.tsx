@@ -2,9 +2,18 @@ import {defined} from './Base';
 import {createLabel, fetchLabels} from './Gapi';
 
 const TEAMAIL_BASE_LABEL = 'tm';
+const MKTIME_BASE_LABEL = 'mktime';
+const PRIORITY_LABEL_NAME = `${MKTIME_BASE_LABEL}/priority`;
 
 export const LabelName = {
   keep: `${TEAMAIL_BASE_LABEL}/keep`,
+  bookmark: `${PRIORITY_LABEL_NAME}/Bookmark`,
+  pin: `${PRIORITY_LABEL_NAME}/Pin`,
+  emptyDaily: `${PRIORITY_LABEL_NAME}/Empty-daily`,
+  urgent: `${PRIORITY_LABEL_NAME}/Urgent`,
+  backlog: `${PRIORITY_LABEL_NAME}/Backlog`,
+  stuck: `${PRIORITY_LABEL_NAME}/Stuck`,
+  softMute: `${MKTIME_BASE_LABEL}/softmute`,
 };
 
 export class Label {
@@ -46,6 +55,11 @@ export class LabelMap {
       return label;
     }
 
+    // TODO: There's a race here if the label got created in another client
+    // after this client had initially loaded labels. This should realy return
+    // in that case, but instead it throws an error due to receiving a 409 from
+    // the createLabel call with status "ABORTED" and message "Label name exists
+    // or conflicts"
     const parts = labelName.split('/');
 
     let labelSoFar;

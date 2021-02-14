@@ -259,7 +259,3 @@ export async function modifyMessages(
     await modifyThread(threadId, addLabelIds, removeLabelIds);
   }
 }
-
-export function archiveMessages(messages: Message[]): Promise<void> {
-  return modifyMessages(messages, [], ['INBOX']);
-}
