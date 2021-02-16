@@ -31,8 +31,6 @@ export class Thread {
 
   async fetchMessages(): Promise<void> {
     this._rawThread = await fetchMessageIdsAndLabels(this.id());
-    console.log('RAW THREAD');
-    console.log(this._rawThread);
     const messages = this._rawThread.messages?.map((x) => new Message(x));
     this._messages = messages;
 

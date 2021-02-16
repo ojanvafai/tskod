@@ -9,18 +9,11 @@ import {
 } from 'react-native';
 
 import {Card} from './Card';
-import {
-  archiveMessages,
-  fetchThreads,
-  modifyMessages,
-  login,
-  modifyThread,
-} from '../Gapi';
+import {archiveMessages, fetchThreads, modifyMessages, login} from '../Gapi';
 import {Message} from '../Message';
 import {Thread} from '../Thread';
 import {LabelName, Labels} from '../Labels';
 import {defined} from '../Base';
-import {GoogleSignin} from '@react-native-community/google-signin';
 
 export interface ThreadActions {
   archive: (messages: Message[]) => Promise<void>;
@@ -64,26 +57,25 @@ function App(): JSX.Element {
 
   const [loadingThreads, setLoadingThreads] = useState(LoadState.initial);
 
-  async function* fetchThreadsWithMetadata(): AsyncGenerator<Thread> {
-    // TODO: Sort by date.
-    const threads = (await fetchThreads(`in:inbox -in:${LabelName.keep}`))
-      .threads;
-
-    for (const rawThread of defined(threads)) {
-      const thread = new Thread(rawThread);
-      await thread.fetchMessages();
-      if (!thread.hasMessagesInInbox()) {
-        console.log('SKIPPING');
-        //await modifyThread(thread.id(), [], ['INBOX']);
-        continue;
-      }
-
-      console.log('YIELD');
-      yield thread;
-    }
-  }
-
   useEffect(() => {
+    async function* fetchThreadsWithMetadata(): AsyncGenerator<Thread> {
+      // TODO: Sort by date.
+      const threads = (await fetchThreads(`in:inbox -in:${LabelName.keep}`))
+        .threads;
+
+      for (const rawThread of defined(threads)) {
+        const thread = new Thread(rawThread);
+        await thread.fetchMessages();
+        if (!thread.hasMessagesInInbox()) {
+          console.log('SKIPPING');
+          //await modifyThread(thread.id(), [], ['INBOX']);
+          continue;
+        }
+
+        console.log('YIELD');
+        yield thread;
+      }
+    }
     if (loadingThreads !== LoadState.loading) {
       return;
     }
@@ -117,9 +109,11 @@ function App(): JSX.Element {
 
   const threadActions: ThreadActions = {
     archive: (messages: Message[]) => {
+      console.log('ARCHIVE');
       return archiveMessages(messages);
     },
     keep: async (messages: Message[]) => {
+      console.log('KEEP');
       const keepLabel = await Labels.getOrCreateLabel(LabelName.keep);
       return modifyMessages(messages, [keepLabel.getId()], []);
     },
@@ -145,8 +139,6 @@ function App(): JSX.Element {
         />
       );
     });
-
-  console.log('CARDS LENGTH ' + cards.length);
 
   // First card is at the bottom of the visual stack and last card is at the
   // top. So reverse so we can have the first thread show up visibly at the top

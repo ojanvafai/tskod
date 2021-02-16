@@ -47,10 +47,8 @@ function randomSign(): number {
 }
 
 export function Card(props: CardProps): JSX.Element {
-  const messages: Message[] = props.thread.messages;
-  const firstAndLastMessages = props.thread.firstAndLastMessages
-    ? props.thread.firstAndLastMessages
-    : [];
+  const messages: Message[] = props.thread.messages();
+  const firstAndLastMessages = props.thread.firstAndLastMessages() ?? [];
 
   // Take the swipe action immediately when the user lifts their finger in
   // parallel with swiping the card offscreen.
@@ -147,7 +145,7 @@ export function Card(props: CardProps): JSX.Element {
             // Finished spring animation.
             cond(eq(currentAction, CurrentAction.Swiping), [
               call([], () =>
-                props.onCardOffScreen({removeThreadId: props.thread.id}),
+                props.onCardOffScreen({removeThreadId: props.thread.id()}),
               ),
             ]),
             set(currentAction, CurrentAction.None),
@@ -267,7 +265,7 @@ export function Card(props: CardProps): JSX.Element {
   let messageComponents;
   if (!props.preventRenderMessages && firstAndLastMessages.length) {
     messageComponents = firstAndLastMessages.map((x) => (
-      <MessageComponent key={x.id} message={x} />
+      <MessageComponent key={x.id()} message={x} />
     ));
     if (messages.length > 1) {
       const elidedMessageCount = messages.length - 2;
