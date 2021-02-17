@@ -62,12 +62,16 @@ export class Message {
     this._parseHeaders();
   }
 
-  get id(): string {
+  id(): string {
     return defined(this._rawMessage.id);
   }
 
-  get threadId(): string {
+  threadId(): string {
     return defined(this._rawMessage.threadId);
+  }
+
+  labelIds(): string[] {
+    return defined(this._rawMessage.labelIds);
   }
 
   private _parseHeaders(): void {
