@@ -25,7 +25,7 @@ export async function login(): Promise<void> {
     iosClientId:
       '957024671877-4eu314jmn3c60neao556ltfa025u9ao3.apps.googleusercontent.com', // [iOS] optional, if you want to specify the client ID of type iOS (otherwise, it is taken from GoogleService-Info.plist)
     offlineAccess: true, // if you want to access Google API on behalf of the user FROM YOUR SERVER
-    forceCodeForRefreshToken: false, // [Android] related to `serverAuthCode`, read the docs link below *.
+    //forceCodeForRefreshToken: true, // [Android] related to `serverAuthCode`, read the docs link below *.
   });
 
   await GoogleSignin.hasPlayServices();
