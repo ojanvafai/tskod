@@ -42,7 +42,7 @@ export class Message {
   from?: string;
   to?: string;
   cc?: string;
-  date?: string;
+  date?: string | number;
   deliveredTo?: string;
   replyTo?: string;
   sender?: string;
@@ -108,7 +108,9 @@ export class Message {
     }
     // Some messages don't have a date header. Fallback to gmail's internal one.
     if (!this.date) {
-      this.date = this._rawMessage.internalDate;
+      // If this is a string then new Date tries to parse it as such. This ms
+      // since epoch, which new Date takes as a number.
+      this.date = Number(this._rawMessage.internalDate);
     }
   }
 

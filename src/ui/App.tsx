@@ -9,16 +9,9 @@ import {
 } from 'react-native';
 
 import {Card} from './Card';
-import {archiveMessages, fetchThreads, modifyMessages, login} from '../Gapi';
-import {Message} from '../Message';
+import {fetchThreads, modifyThread, login} from '../Gapi';
 import {Thread} from '../Thread';
 import {LabelName, Labels} from '../Labels';
-import {defined} from '../Base';
-
-export interface ThreadActions {
-  archive: (messages: Message[]) => Promise<void>;
-  keep: (messages: Message[]) => Promise<void>;
-}
 
 interface ThreadsState {
   threads: Thread[];
@@ -60,19 +53,24 @@ function App(): JSX.Element {
   useEffect(() => {
     async function* fetchThreadsWithMetadata(): AsyncGenerator<Thread> {
       // TODO: Sort by date.
-      const threads = (await fetchThreads(`in:inbox -in:${LabelName.keep}`))
-        .threads;
 
-      for (const rawThread of defined(threads)) {
+      const namesToExclude = Object.values(LabelName).join('" -in:"');
+      const query = `in:inbox -in:chats -in:"${namesToExclude}"`;
+
+      const threads = (await fetchThreads(query)).threads;
+
+      if (!threads) {
+        return;
+      }
+
+      for (const rawThread of threads) {
         const thread = new Thread(rawThread);
         await thread.fetchMessages();
         if (!thread.hasMessagesInInbox()) {
-          console.log('SKIPPING');
-          //await modifyThread(thread.id(), [], ['INBOX']);
+          await modifyThread(thread.id(), [], ['INBOX']);
           continue;
         }
 
-        console.log('YIELD');
         yield thread;
       }
     }
@@ -92,6 +90,7 @@ function App(): JSX.Element {
         const thread = generatorResult.value;
 
         threads.push(thread);
+
         updateThreadListState({threads});
       }
       setLoadingThreads(LoadState.loaded);
@@ -107,18 +106,6 @@ function App(): JSX.Element {
     })();
   }, []);
 
-  const threadActions: ThreadActions = {
-    archive: (messages: Message[]) => {
-      console.log('ARCHIVE');
-      return archiveMessages(messages);
-    },
-    keep: async (messages: Message[]) => {
-      console.log('KEEP');
-      const keepLabel = await Labels.getOrCreateLabel(LabelName.keep);
-      return modifyMessages(messages, [keepLabel.getId()], []);
-    },
-  };
-
   // TODO: Once we take message fetching out of Card creation, only prerender
   // one card below the most recently swiped card. Until then, render more cards
   // and prevent rendering their messages to avoid getting stalled on slow
@@ -133,7 +120,6 @@ function App(): JSX.Element {
         <Card
           key={threadId}
           thread={thread}
-          actions={threadActions}
           onCardOffScreen={updateThreadListState}
           preventRenderMessages={index > 2}
         />
