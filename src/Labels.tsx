@@ -1,5 +1,5 @@
-import {defined} from './Base';
-import {createLabel, fetchLabels} from './Gapi';
+import { defined } from './Base';
+import { createLabel, fetchLabels } from './Gapi';
 
 const TEAMAIL_BASE_LABEL = 'tm';
 const MKTIME_BASE_LABEL = 'mktime';
@@ -83,4 +83,4 @@ export class LabelMap {
 }
 
 const Labels = new LabelMap();
-export {Labels};
+export { Labels };

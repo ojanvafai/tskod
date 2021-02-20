@@ -12,7 +12,7 @@ const TeamailSchema = {
 };
 
 async function signInRealm(token: string): Promise<void> {
-  const app = new Realm.App({id: 'teamail-qvqif'});
+  const app = new Realm.App({ id: 'teamail-qvqif' });
 
   const credentials = Realm.Credentials.google(token);
   let user = null;
@@ -56,4 +56,4 @@ async function signInRealm(token: string): Promise<void> {
   realm.close();
 }
 
-export {signInRealm};
+export { signInRealm };

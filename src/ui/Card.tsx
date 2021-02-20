@@ -1,7 +1,7 @@
-import React, {useState} from 'react';
-import {StyleSheet, Text, Dimensions, View} from 'react-native';
-import {PanGestureHandler, State} from 'react-native-gesture-handler';
-import {Thread} from '../Thread';
+import React, { useState } from 'react';
+import { StyleSheet, Text, Dimensions, View } from 'react-native';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import { Thread } from '../Thread';
 import Animated, {
   cond,
   eq,
@@ -20,14 +20,14 @@ import Animated, {
   call,
   not,
 } from 'react-native-reanimated';
-import {Colors} from 'react-native/Libraries/NewAppScreen';
-import {assert} from '../Base';
+import { Colors } from 'react-native/Libraries/NewAppScreen';
+import { assert } from '../Base';
 
-import {modifyMessages} from '../Gapi';
-import {LabelName, Labels} from '../Labels';
-import {Message} from '../Message';
-import {UpdateThreadListAction} from './App';
-import {MessageComponent} from './MessageComponent';
+import { modifyMessages } from '../Gapi';
+import { LabelName, Labels } from '../Labels';
+import { Message } from '../Message';
+import { UpdateThreadListAction } from './App';
+import { MessageComponent } from './MessageComponent';
 
 interface CardProps {
   thread: Thread;
@@ -56,10 +56,7 @@ export function Card(props: CardProps): JSX.Element {
   // parallel with swiping the card offscreen.
   const [hasSwiped, setHasSwiped] = useState(false);
 
-  async function handleSwipe(
-    addLabelIds: string[],
-    removeLabelIds: string[],
-  ): Promise<void> {
+  async function handleSwipe(addLabelIds: string[], removeLabelIds: string[]): Promise<void> {
     if (hasSwiped) {
       return;
     }
@@ -120,16 +117,9 @@ export function Card(props: CardProps): JSX.Element {
               greaterThan(abs(panX), MIN_PAN_FOR_ACTION),
               // Swiping.
               [
-                set(
-                  config.toValue,
-                  multiply(divide(panX, abs(panX)), WINDOW_WIDTH),
-                ),
+                set(config.toValue, multiply(divide(panX, abs(panX)), WINDOW_WIDTH)),
                 [set(currentAction, CurrentAction.Swiping)],
-                cond(
-                  greaterThan(panX, 0),
-                  call([], swipeRight),
-                  call([], swipeLeft),
-                ),
+                cond(greaterThan(panX, 0), call([], swipeRight), call([], swipeLeft)),
               ],
               // Releasing without a swipe.
               [set(config.toValue, 0)],
@@ -152,9 +142,7 @@ export function Card(props: CardProps): JSX.Element {
           cond(springState.finished, [
             // Finished spring animation.
             cond(eq(currentAction, CurrentAction.Swiping), [
-              call([], () =>
-                props.onCardOffScreen({removeThreadId: props.thread.id()}),
-              ),
+              call([], () => props.onCardOffScreen({ removeThreadId: props.thread.id() })),
             ]),
             set(currentAction, CurrentAction.None),
             stopClock(clock),
@@ -209,7 +197,7 @@ export function Card(props: CardProps): JSX.Element {
         },
         // @ts-expect-error StyleSheet.create type doesn't like getting an
         // Animated.Node<number> instead of a plain number.
-        {translateX: panDrawX},
+        { translateX: panDrawX },
       ],
     },
     visibleCard: {
@@ -282,12 +270,10 @@ export function Card(props: CardProps): JSX.Element {
       const elidedMessageCount = messages.length - 2;
       // Need to use a view because borders on only one side don't work on Text.
       const divider = (
-        <View key="messageCount" style={style.elidedMessageCount}>
+        <View key='messageCount' style={style.elidedMessageCount}>
           <Text>
             {elidedMessageCount > 0
-              ? `${elidedMessageCount} more message${
-                  elidedMessageCount > 1 && 's'
-                }`
+              ? `${elidedMessageCount} more message${elidedMessageCount > 1 && 's'}`
               : ' '}
           </Text>
         </View>
@@ -300,7 +286,8 @@ export function Card(props: CardProps): JSX.Element {
     <PanGestureHandler
       enabled={firstAndLastMessages.length > 0}
       onGestureEvent={handleGesture}
-      onHandlerStateChange={handleGesture}>
+      onHandlerStateChange={handleGesture}
+    >
       {/* @ts-ignore the type doesn't allow position:absolute...the type seems to be wrong. */}
       <Animated.View style={style.card}>
         <View style={style.visibleCard}>
@@ -313,9 +300,7 @@ export function Card(props: CardProps): JSX.Element {
           </View>
           <View style={[style.toolbar, style.left]}>
             <View style={style.toolbarButton}>
-              <Text style={style.buttonText}>
-                {LabelName.emptyDaily.split('/')[2]}
-              </Text>
+              <Text style={style.buttonText}>{LabelName.emptyDaily.split('/')[2]}</Text>
             </View>
           </View>
         </View>
