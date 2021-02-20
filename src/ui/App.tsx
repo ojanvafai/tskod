@@ -1,17 +1,10 @@
-import React, {useEffect, useReducer, useState} from 'react';
-import {
-  Button,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import React, { useEffect, useReducer, useState } from 'react';
+import { Button, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
 
-import {Card} from './Card';
-import {fetchThreads, modifyThread, login} from '../Gapi';
-import {Thread} from '../Thread';
-import {LabelName, Labels} from '../Labels';
+import { Card } from './Card';
+import { fetchThreads, modifyThread, login } from '../Gapi';
+import { Thread } from '../Thread';
+import { LabelName, Labels } from '../Labels';
 
 interface ThreadsState {
   threads: Thread[];
@@ -29,17 +22,14 @@ enum LoadState {
 }
 
 function App(): JSX.Element {
-  function reducer(
-    state: ThreadsState,
-    action: UpdateThreadListAction,
-  ): ThreadsState {
+  function reducer(state: ThreadsState, action: UpdateThreadListAction): ThreadsState {
     if (action.removeThreadId) {
       return {
         threads: state.threads.filter((x) => x.id() !== action.removeThreadId),
       };
     }
     if (action.threads) {
-      return {threads: action.threads};
+      return { threads: action.threads };
     }
     throw new Error('Invalid thread reducer action.');
   }
@@ -91,7 +81,7 @@ function App(): JSX.Element {
 
         threads.push(thread);
 
-        updateThreadListState({threads});
+        updateThreadListState({ threads });
       }
       setLoadingThreads(LoadState.loaded);
     })();
@@ -112,19 +102,17 @@ function App(): JSX.Element {
   // network.
   const numCardsRendered = 10;
 
-  const cards = threadListState.threads
-    .slice(0, numCardsRendered)
-    .map((thread, index) => {
-      const threadId = thread.id();
-      return (
-        <Card
-          key={threadId}
-          thread={thread}
-          onCardOffScreen={updateThreadListState}
-          preventRenderMessages={index > 2}
-        />
-      );
-    });
+  const cards = threadListState.threads.slice(0, numCardsRendered).map((thread, index) => {
+    const threadId = thread.id();
+    return (
+      <Card
+        key={threadId}
+        thread={thread}
+        onCardOffScreen={updateThreadListState}
+        preventRenderMessages={index > 2}
+      />
+    );
+  });
 
   // First card is at the bottom of the visual stack and last card is at the
   // top. So reverse so we can have the first thread show up visibly at the top
@@ -132,14 +120,12 @@ function App(): JSX.Element {
   cards.reverse();
 
   const style = StyleSheet.create({
-    view: cards.length
-      ? {flex: 1}
-      : {flex: 1, justifyContent: 'center', alignItems: 'center'},
+    view: cards.length ? { flex: 1 } : { flex: 1, justifyContent: 'center', alignItems: 'center' },
   });
 
   return (
     <React.Fragment>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle='dark-content' />
       <SafeAreaView style={style.view}>
         {/* Wrapper View prevents absolutely positioned Cards from escaping the safe area. */}
         <View style={style.view}>
@@ -151,7 +137,7 @@ function App(): JSX.Element {
                 'Loading...'
               ) : (
                 <Button
-                  title="Check for new messages"
+                  title='Check for new messages'
                   onPress={(): void => setLoadingThreads(LoadState.loading)}
                 />
               )}

@@ -1,5 +1,4 @@
-const keyStr =
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_=';
+const keyStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_=';
 
 export function encode(input: string): string {
   const output = [];
@@ -33,10 +32,7 @@ export function encode(input: string): string {
     }
 
     output.push(
-      keyStr.charAt(enc1) +
-        keyStr.charAt(enc2) +
-        keyStr.charAt(enc3) +
-        keyStr.charAt(enc4),
+      keyStr.charAt(enc1) + keyStr.charAt(enc2) + keyStr.charAt(enc3) + keyStr.charAt(enc4),
     );
   } while (i < input.length);
 
@@ -75,10 +71,7 @@ export function encodeFromByteArray(input: number[]): string {
     }
 
     output.push(
-      keyStr.charAt(enc1) +
-        keyStr.charAt(enc2) +
-        keyStr.charAt(enc3) +
-        keyStr.charAt(enc4),
+      keyStr.charAt(enc1) + keyStr.charAt(enc2) + keyStr.charAt(enc3) + keyStr.charAt(enc4),
     );
   } while (i < input.length);
 

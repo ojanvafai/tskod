@@ -1,5 +1,5 @@
-import {defined, notNull} from './Base';
-import {urlDecode} from './Base64Url';
+import { defined, notNull } from './Base';
+import { urlDecode } from './Base64Url';
 import * as emailAddresses from 'email-addresses';
 
 type AddressGroup = emailAddresses.ParsedMailbox | emailAddresses.ParsedGroup;
@@ -21,19 +21,10 @@ const thisDayDateFormat = {
   hour: 'numeric',
   minute: 'numeric',
 };
-const thisDayDateFormatter = new Intl.DateTimeFormat(
-  undefined,
-  thisDayDateFormat,
-);
-const thisYearDateFormat = Object.assign(
-  {month: 'short', day: 'numeric'},
-  thisDayDateFormat,
-);
-const thisYearDateFormatter = new Intl.DateTimeFormat(
-  undefined,
-  thisYearDateFormat,
-);
-const fullDateFormat = Object.assign({year: 'numeric'}, thisYearDateFormat);
+const thisDayDateFormatter = new Intl.DateTimeFormat(undefined, thisDayDateFormat);
+const thisYearDateFormat = Object.assign({ month: 'short', day: 'numeric' }, thisDayDateFormat);
+const thisYearDateFormatter = new Intl.DateTimeFormat(undefined, thisYearDateFormat);
+const fullDateFormat = Object.assign({ year: 'numeric' }, thisYearDateFormat);
 const fullDateFormatter = new Intl.DateTimeFormat(undefined, fullDateFormat);
 
 export class Message {
@@ -121,9 +112,7 @@ export class Message {
     const addresses: string[] = [];
     for (const groupOrMailbox of notNull(addressList)) {
       const mailboxes =
-        'addresses' in groupOrMailbox
-          ? groupOrMailbox.addresses
-          : [defined(groupOrMailbox)];
+        'addresses' in groupOrMailbox ? groupOrMailbox.addresses : [defined(groupOrMailbox)];
       for (const mailbox of mailboxes) {
         addresses.push(callback(mailbox));
       }

@@ -1,11 +1,7 @@
-import {
-  GoogleSignin,
-  statusCodes,
-  User,
-} from '@react-native-community/google-signin';
-import {defined} from './Base';
-import {Message} from './Message';
-import {signInRealm} from './Sync';
+import { GoogleSignin, statusCodes, User } from '@react-native-community/google-signin';
+import { defined } from './Base';
+import { Message } from './Message';
+import { signInRealm } from './Sync';
 
 interface Json {
   [x: string]: string | number | boolean | Date | Json | JsonArray;
@@ -20,10 +16,8 @@ export async function login(): Promise<void> {
       'https://www.googleapis.com/auth/gmail.modify',
       'https://www.googleapis.com/auth/contacts.readonly',
     ],
-    webClientId:
-      '957024671877-pmopl7t9j5vtieu207p56slhr7h1pkui.apps.googleusercontent.com', // client ID of type WEB for your server (needed to verify user ID and offline access)
-    iosClientId:
-      '957024671877-4eu314jmn3c60neao556ltfa025u9ao3.apps.googleusercontent.com', // [iOS] optional, if you want to specify the client ID of type iOS (otherwise, it is taken from GoogleService-Info.plist)
+    webClientId: '957024671877-pmopl7t9j5vtieu207p56slhr7h1pkui.apps.googleusercontent.com', // client ID of type WEB for your server (needed to verify user ID and offline access)
+    iosClientId: '957024671877-4eu314jmn3c60neao556ltfa025u9ao3.apps.googleusercontent.com', // [iOS] optional, if you want to specify the client ID of type iOS (otherwise, it is taken from GoogleService-Info.plist)
     offlineAccess: true, // if you want to access Google API on behalf of the user FROM YOUR SERVER
     //forceCodeForRefreshToken: true, // [Android] related to `serverAuthCode`, read the docs link below *.
   });
@@ -64,10 +58,7 @@ export async function login(): Promise<void> {
   }
 }
 
-function encodeParameters(
-  url: string,
-  obj: {[property: string]: string | number},
-): string {
+function encodeParameters(url: string, obj: { [property: string]: string | number }): string {
   return `${url}?${Object.entries(obj)
     .map((p) => `${encodeURIComponent(p[0])}=${encodeURIComponent(p[1])}`)
     .join('&')}`;
@@ -80,7 +71,7 @@ async function gapiFetch<T>({
 }: {
   url: string;
   postBody?: T;
-  queryParameters?: {[property: string]: string};
+  queryParameters?: { [property: string]: string };
 }): Promise<Response> {
   const fullUrl = encodeParameters(url, {
     alt: 'json',
@@ -97,7 +88,7 @@ async function gapiFetch<T>({
   });
   headers.set('Authorization', 'Bearer ' + accessToken);
 
-  const options: RequestInit = {headers};
+  const options: RequestInit = { headers };
   if (postBody) {
     options.method = 'POST';
     options.body = JSON.stringify(postBody);
@@ -121,9 +112,9 @@ async function gapiFetchJson<T>({
 }: {
   url: string;
   postBody?: T;
-  queryParameters?: {[property: string]: string};
+  queryParameters?: { [property: string]: string };
 }): Promise<Json> {
-  const response = await gapiFetch<T>({url, postBody, queryParameters});
+  const response = await gapiFetch<T>({ url, postBody, queryParameters });
   return response.json();
 }
 
@@ -132,12 +123,10 @@ const THREADS_URL = `${GMAIL_BASE_URL}/threads`;
 const MESSAGES_URL = `${GMAIL_BASE_URL}/messages`;
 const LABELS_URL = `${GMAIL_BASE_URL}/labels`;
 
-export async function fetchThreads(
-  query: string,
-): Promise<gapi.client.gmail.ListThreadsResponse> {
+export async function fetchThreads(query: string): Promise<gapi.client.gmail.ListThreadsResponse> {
   const response = await gapiFetchJson({
     url: THREADS_URL,
-    queryParameters: {q: query},
+    queryParameters: { q: query },
   });
   return response;
 }
@@ -147,14 +136,12 @@ export async function fetchMessageIdsAndLabels(
 ): Promise<gapi.client.gmail.Thread> {
   const response = await gapiFetchJson({
     url: `${THREADS_URL}/${threadId}`,
-    queryParameters: {format: 'MINIMAL'},
+    queryParameters: { format: 'MINIMAL' },
   });
   return response;
 }
 
-export async function fetchMessageById(
-  messageId: string,
-): Promise<gapi.client.gmail.Message> {
+export async function fetchMessageById(messageId: string): Promise<gapi.client.gmail.Message> {
   const response = await gapiFetchJson({
     url: `${MESSAGES_URL}/${messageId}`,
     queryParameters: {
@@ -166,9 +153,7 @@ export async function fetchMessageById(
   return response;
 }
 
-export function fetchMessagesByIds(
-  messageIds: string[],
-): Promise<gapi.client.gmail.Message[]> {
+export function fetchMessagesByIds(messageIds: string[]): Promise<gapi.client.gmail.Message[]> {
   // TODO: Batch this per https://developers.google.com/gmail/api/guides/batch
   // to do a single network request instead of N requests.
   return Promise.all(messageIds.map((id) => fetchMessageById(id)));
@@ -242,9 +227,7 @@ export async function modifyMessages(
   const freshMessageResponse = await fetchMessageIdsAndLabels(threadId);
   const freshMessages = defined(freshMessageResponse.messages);
 
-  const unknownMessages = freshMessages.filter(
-    (x) => !messageIds.includes(defined(x.id)),
-  );
+  const unknownMessages = freshMessages.filter((x) => !messageIds.includes(defined(x.id)));
   // New messages have come in since we initiated this modify action, so don't
   // modify the whole thread and live with this modify pontentially having
   // silently failed.
@@ -253,10 +236,7 @@ export async function modifyMessages(
   }
 
   const allLabels = new Set(freshMessages.flatMap((x) => defined(x.labelIds)));
-  if (
-    addLabelIds.some((x) => !allLabels.has(x)) ||
-    removeLabelIds.some((x) => allLabels.has(x))
-  ) {
+  if (addLabelIds.some((x) => !allLabels.has(x)) || removeLabelIds.some((x) => allLabels.has(x))) {
     await modifyThread(threadId, addLabelIds, removeLabelIds);
   }
 }

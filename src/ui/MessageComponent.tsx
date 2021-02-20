@@ -1,8 +1,8 @@
-import {Message} from '../Message';
+import { Message } from '../Message';
 
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
-import {WebView} from 'react-native-webview';
+import { StyleSheet, Text, View } from 'react-native';
+import { WebView } from 'react-native-webview';
 
 const htmlHeader =
   '<meta name="viewport" content="width=device-width, initial-scale=1"><style>body, html { margin: 0; pointer-events: none; }</style>';
@@ -28,7 +28,7 @@ const style = StyleSheet.create({
   },
 });
 
-export function MessageComponent(props: {message: Message}): JSX.Element {
+export function MessageComponent(props: { message: Message }): JSX.Element {
   const message = props.message;
   const headerRowStyles = [style.headerRow, style.font];
   return (
@@ -45,14 +45,12 @@ export function MessageComponent(props: {message: Message}): JSX.Element {
           )}
           {(message.to || undefined) && (
             <Text style={headerRowStyles} numberOfLines={1}>
-              <Text style={style.bold}>to:</Text>{' '}
-              {message.getToNames().join(', ')}
+              <Text style={style.bold}>to:</Text> {message.getToNames().join(', ')}
             </Text>
           )}
           {(message.cc || undefined) && (
             <Text style={headerRowStyles} numberOfLines={1}>
-              <Text style={style.bold}>cc:</Text>{' '}
-              {message.getCcNames().join(', ')}
+              <Text style={style.bold}>cc:</Text> {message.getCcNames().join(', ')}
             </Text>
           )}
         </View>
@@ -63,7 +61,7 @@ export function MessageComponent(props: {message: Message}): JSX.Element {
       <WebView
         scrollEnabled={false}
         javaScriptEnabled={false}
-        source={{html: htmlHeader + message.getHtmlOrPlain()}}
+        source={{ html: htmlHeader + message.getHtmlOrPlain() }}
       />
     </>
   );
