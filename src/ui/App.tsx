@@ -131,10 +131,12 @@ function App(): JSX.Element {
   // of the stack.
   cards.reverse();
 
+  const noCardsStyleOrEmpty = StyleSheet.create({
+    view: cards.length ? {} : {justifyContent: 'center', alignItems: 'center'},
+  });
+
   const style = StyleSheet.create({
-    view: cards.length
-      ? {flex: 1}
-      : {flex: 1, justifyContent: 'center', alignItems: 'center'},
+    view: {flex: 1, backgroundColor: '#eee'},
   });
 
   return (
@@ -142,7 +144,7 @@ function App(): JSX.Element {
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={style.view}>
         {/* Wrapper View prevents absolutely positioned Cards from escaping the safe area. */}
-        <View style={style.view}>
+        <View style={[style.view, noCardsStyleOrEmpty.view]}>
           {cards.length ? (
             cards
           ) : (

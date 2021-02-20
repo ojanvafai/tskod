@@ -189,7 +189,11 @@ export function Card(props: CardProps): JSX.Element {
     },
   );
 
-  const [angleOffset] = useState(randomSign() * Math.random());
+  // Don't rotate the front card.
+  const [angleOffset] = useState(
+    props.preventRenderMessages ? randomSign() * Math.random() : 0,
+  );
+
   const style = StyleSheet.create({
     // Have the card's drag area be the full size of the screen so that the user
     // can't drag the card behind the one on top by grabbing the edge that's
@@ -225,6 +229,7 @@ export function Card(props: CardProps): JSX.Element {
       },
       shadowOpacity: 0.25,
       shadowRadius: 2,
+      elevation: 1,
     },
     toolbar: {
       position: 'absolute',
