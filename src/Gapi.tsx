@@ -107,6 +107,7 @@ async function gapiFetch<T>({
   let response = await fetch(fullUrl, options);
   // 401 happens when auth credentials expire (and probably in other cases too).
   if (response.status === 401) {
+    console.log('Retrying credentials');
     await login();
     response = await fetch(fullUrl, options);
   }
@@ -165,7 +166,7 @@ export async function fetchMessageById(
   return response;
 }
 
-export function fetchMessagesById(
+export function fetchMessagesByIds(
   messageIds: string[],
 ): Promise<gapi.client.gmail.Message[]> {
   // TODO: Batch this per https://developers.google.com/gmail/api/guides/batch
@@ -196,7 +197,7 @@ export async function createLabel(
   return response;
 }
 
-async function modifyThread(
+export async function modifyThread(
   threadId: string,
   addLabelIds: string[],
   removeLabelIds: string[],
@@ -217,7 +218,7 @@ export async function modifyMessages(
   addLabelIds: string[],
   removeLabelIds: string[],
 ): Promise<void> {
-  const messageIds = messages.map((x) => x.id);
+  const messageIds = messages.map((x) => x.id());
   await gapiFetch<BatchModifyData>({
     url: `${MESSAGES_URL}/batchModify`,
     postBody: {
@@ -237,7 +238,7 @@ export async function modifyMessages(
   // https://issuetracker.google.com/issues/122167541 which probably needs to be
   // handled when pulling in the thread list by checking if the thread is
   // actually in the inbox as per the labels on its messages.
-  const threadId = messages[0].threadId;
+  const threadId = messages[0].threadId();
   const freshMessageResponse = await fetchMessageIdsAndLabels(threadId);
   const freshMessages = defined(freshMessageResponse.messages);
 
@@ -258,8 +259,4 @@ export async function modifyMessages(
   ) {
     await modifyThread(threadId, addLabelIds, removeLabelIds);
   }
-}
-
-export function archiveMessages(messages: Message[]): Promise<void> {
-  return modifyMessages(messages, [], ['INBOX']);
 }

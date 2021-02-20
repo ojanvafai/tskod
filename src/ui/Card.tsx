@@ -1,6 +1,7 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {StyleSheet, Text, Dimensions, View} from 'react-native';
 import {PanGestureHandler, State} from 'react-native-gesture-handler';
+import {Thread} from '../Thread';
 import Animated, {
   cond,
   eq,
@@ -20,16 +21,16 @@ import Animated, {
   not,
 } from 'react-native-reanimated';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import {assert, defined} from '../Base';
+import {assert} from '../Base';
 
-import {fetchMessageIdsAndLabels, fetchMessagesById} from '../Gapi';
+import {modifyMessages} from '../Gapi';
+import {LabelName, Labels} from '../Labels';
 import {Message} from '../Message';
-import {UpdateThreadListAction, ThreadActions} from './App';
+import {UpdateThreadListAction} from './App';
 import {MessageComponent} from './MessageComponent';
 
 interface CardProps {
-  threadId: string;
-  actions: ThreadActions;
+  thread: Thread;
   onCardOffScreen: React.Dispatch<UpdateThreadListAction>;
   preventRenderMessages: boolean;
 }
@@ -48,32 +49,35 @@ function randomSign(): number {
 }
 
 export function Card(props: CardProps): JSX.Element {
-  const [messages, setMessages] = useState([] as Message[]);
-  const [
-    firstAndLastMessageContents,
-    setFirstAndLastMessageContents,
-  ] = useState([] as Message[]);
+  const messages: Message[] = props.thread.messages();
+  const firstAndLastMessages = props.thread.firstAndLastMessages() ?? [];
 
   // Take the swipe action immediately when the user lifts their finger in
   // parallel with swiping the card offscreen.
   const [hasSwiped, setHasSwiped] = useState(false);
 
-  async function swipeLeft(): Promise<void> {
+  async function handleSwipe(
+    addLabelIds: string[],
+    removeLabelIds: string[],
+  ): Promise<void> {
     if (hasSwiped) {
       return;
     }
     setHasSwiped(true);
     assert(messages.length);
-    await props.actions.archive(messages);
+    await modifyMessages(messages, addLabelIds, removeLabelIds);
+  }
+
+  async function swipeLeft(): Promise<void> {
+    await handleSwipe([], ['INBOX']);
   }
 
   async function swipeRight(): Promise<void> {
-    if (hasSwiped) {
-      return;
-    }
-    setHasSwiped(true);
-    assert(messages.length);
-    await props.actions.keep(messages);
+    const [keep, emptyDaily] = await Promise.all([
+      Labels.getOrCreateLabel(LabelName.keep),
+      Labels.getOrCreateLabel(LabelName.emptyDaily),
+    ]);
+    await handleSwipe([keep.getId(), emptyDaily.getId()], []);
   }
 
   function useAnimation(
@@ -149,7 +153,7 @@ export function Card(props: CardProps): JSX.Element {
             // Finished spring animation.
             cond(eq(currentAction, CurrentAction.Swiping), [
               call([], () =>
-                props.onCardOffScreen({removeThreadId: props.threadId}),
+                props.onCardOffScreen({removeThreadId: props.thread.id()}),
               ),
             ]),
             set(currentAction, CurrentAction.None),
@@ -169,25 +173,6 @@ export function Card(props: CardProps): JSX.Element {
   const panState = Animated.useValue(State.UNDETERMINED);
   const [clock] = useState(new Clock());
   const panDrawX = useAnimation(panX, velocityX, clock, panState);
-
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    (async (): Promise<void> => {
-      const messageIds = (await fetchMessageIdsAndLabels(props.threadId))
-        .messages;
-      if (messageIds !== undefined) {
-        setMessages(messageIds.map((x) => new Message(x)));
-        const messageIdsToFetch = [defined(messageIds[0].id)];
-        if (messageIds.length > 1) {
-          messageIdsToFetch.push(defined(messageIds[messageIds.length - 1].id));
-        }
-        const messageContentsData = await fetchMessagesById(messageIdsToFetch);
-        setFirstAndLastMessageContents(
-          messageContentsData.map((x) => new Message(x)),
-        );
-      }
-    })();
-  }, [props.threadId]);
 
   const handleGesture = Animated.event(
     [
@@ -268,6 +253,9 @@ export function Card(props: CardProps): JSX.Element {
       justifyContent: 'center',
       flex: 0,
     },
+    buttonText: {
+      textAlign: 'center',
+    },
     subject: {
       fontWeight: 'bold',
       fontSize: 16,
@@ -281,14 +269,14 @@ export function Card(props: CardProps): JSX.Element {
     },
   });
 
-  const subject = firstAndLastMessageContents.length ? (
-    <Text style={style.subject}>{firstAndLastMessageContents[0].subject}</Text>
+  const subject = firstAndLastMessages.length ? (
+    <Text style={style.subject}>{firstAndLastMessages[0].subject}</Text>
   ) : undefined;
 
   let messageComponents;
-  if (!props.preventRenderMessages && firstAndLastMessageContents.length) {
-    messageComponents = firstAndLastMessageContents.map((x) => (
-      <MessageComponent key={x.id} message={x} />
+  if (!props.preventRenderMessages && firstAndLastMessages.length) {
+    messageComponents = firstAndLastMessages.map((x) => (
+      <MessageComponent key={x.id()} message={x} />
     ));
     if (messages.length > 1) {
       const elidedMessageCount = messages.length - 2;
@@ -310,7 +298,7 @@ export function Card(props: CardProps): JSX.Element {
 
   return (
     <PanGestureHandler
-      enabled={firstAndLastMessageContents.length > 0}
+      enabled={firstAndLastMessages.length > 0}
       onGestureEvent={handleGesture}
       onHandlerStateChange={handleGesture}>
       {/* @ts-ignore the type doesn't allow position:absolute...the type seems to be wrong. */}
@@ -320,12 +308,14 @@ export function Card(props: CardProps): JSX.Element {
           {messageComponents}
           <View style={[style.toolbar, style.right]}>
             <View style={style.toolbarButton}>
-              <Text>archive</Text>
+              <Text style={style.buttonText}>archive</Text>
             </View>
           </View>
           <View style={[style.toolbar, style.left]}>
             <View style={style.toolbarButton}>
-              <Text>keep</Text>
+              <Text style={style.buttonText}>
+                {LabelName.emptyDaily.split('/')[2]}
+              </Text>
             </View>
           </View>
         </View>

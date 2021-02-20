@@ -9,22 +9,17 @@ import {
 } from 'react-native';
 
 import {Card} from './Card';
-import {archiveMessages, fetchThreads, modifyMessages, login} from '../Gapi';
-import {Message} from '../Message';
-import {defined} from '../Base';
+import {fetchThreads, modifyThread, login} from '../Gapi';
+import {Thread} from '../Thread';
 import {LabelName, Labels} from '../Labels';
-export interface ThreadActions {
-  archive: (messages: Message[]) => Promise<void>;
-  keep: (messages: Message[]) => Promise<void>;
-}
 
 interface ThreadsState {
-  threads: gapi.client.gmail.Thread[];
+  threads: Thread[];
 }
 
 export interface UpdateThreadListAction {
   removeThreadId?: string;
-  threads?: gapi.client.gmail.Thread[];
+  threads?: Thread[];
 }
 
 enum LoadState {
@@ -40,7 +35,7 @@ function App(): JSX.Element {
   ): ThreadsState {
     if (action.removeThreadId) {
       return {
-        threads: state.threads.filter((x) => x.id !== action.removeThreadId),
+        threads: state.threads.filter((x) => x.id() !== action.removeThreadId),
       };
     }
     if (action.threads) {
@@ -56,15 +51,46 @@ function App(): JSX.Element {
   const [loadingThreads, setLoadingThreads] = useState(LoadState.initial);
 
   useEffect(() => {
+    async function* fetchThreadsWithMetadata(): AsyncGenerator<Thread> {
+      // TODO: Sort by date.
+
+      const namesToExclude = Object.values(LabelName).join('" -in:"');
+      const query = `in:inbox -in:chats -in:"${namesToExclude}"`;
+
+      const threads = (await fetchThreads(query)).threads;
+
+      if (!threads) {
+        return;
+      }
+
+      for (const rawThread of threads) {
+        const thread = new Thread(rawThread);
+        await thread.fetchMessages();
+        if (!thread.hasMessagesInInbox()) {
+          await modifyThread(thread.id(), [], ['INBOX']);
+          continue;
+        }
+
+        yield thread;
+      }
+    }
     if (loadingThreads !== LoadState.loading) {
       return;
     }
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async (): Promise<void> => {
-      const threads = (await fetchThreads(`in:inbox -in:${LabelName.keep}`))
-        .threads;
-      if (threads) {
-        // TODO: Fetch message data to get the dates so we can sort by date.
+      const threads: Thread[] = [];
+      // TODO - convert to `for await`. See https://github.com/facebook/react-native/issues/27432
+      const threadGenerator = fetchThreadsWithMetadata();
+      while (true) {
+        const generatorResult = await threadGenerator.next();
+        if (generatorResult.done) {
+          break;
+        }
+        const thread = generatorResult.value;
+
+        threads.push(thread);
+
         updateThreadListState({threads});
       }
       setLoadingThreads(LoadState.loaded);
@@ -80,30 +106,20 @@ function App(): JSX.Element {
     })();
   }, []);
 
-  const threadActions: ThreadActions = {
-    archive: (messages: Message[]) => {
-      return archiveMessages(messages);
-    },
-    keep: async (messages: Message[]) => {
-      const keepLabel = await Labels.getOrCreateLabel(LabelName.keep);
-      return modifyMessages(messages, [keepLabel.getId()], []);
-    },
-  };
-
   // TODO: Once we take message fetching out of Card creation, only prerender
   // one card below the most recently swiped card. Until then, render more cards
   // and prevent rendering their messages to avoid getting stalled on slow
   // network.
   const numCardsRendered = 10;
+
   const cards = threadListState.threads
     .slice(0, numCardsRendered)
-    .map((x, index) => {
-      const threadId = defined(x.id);
+    .map((thread, index) => {
+      const threadId = thread.id();
       return (
         <Card
           key={threadId}
-          threadId={threadId}
-          actions={threadActions}
+          thread={thread}
           onCardOffScreen={updateThreadListState}
           preventRenderMessages={index > 2}
         />
