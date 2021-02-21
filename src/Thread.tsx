@@ -1,6 +1,6 @@
-import {defined} from './Base';
-import {fetchMessageIdsAndLabels, fetchMessagesByIds} from './Gapi';
-import {Message} from './Message';
+import { defined } from './Base';
+import { fetchMessageIdsAndLabels, fetchMessagesByIds } from './Gapi';
+import { Message } from './Message';
 
 export class Thread {
   private _rawThread: gapi.client.gmail.Thread;
@@ -44,8 +44,6 @@ export class Thread {
 
     const rawFirstAndLastMessages = await fetchMessagesByIds(messageIdsToFetch);
 
-    this._firstAndLastMessages = rawFirstAndLastMessages.map(
-      (x) => new Message(x),
-    );
+    this._firstAndLastMessages = rawFirstAndLastMessages.map((x) => new Message(x));
   }
 }
