@@ -103,6 +103,8 @@ function App(): JSX.Element {
   const numCardsRendered = 10;
 
   const cards = threadListState.threads.slice(0, numCardsRendered).map((thread, index) => {
+    const xOffset = 8 * Math.random() - 0.5;
+    const angleOffset = 2 * Math.random() - 0.5;
     const threadId = thread.id();
     return (
       <Card
@@ -110,6 +112,8 @@ function App(): JSX.Element {
         thread={thread}
         onCardOffScreen={updateThreadListState}
         preventRenderMessages={index > 2}
+        xOffset={xOffset}
+        angleOffset={angleOffset}
       />
     );
   });

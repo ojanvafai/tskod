@@ -33,6 +33,8 @@ interface CardProps {
   thread: Thread;
   onCardOffScreen: React.Dispatch<UpdateThreadListAction>;
   preventRenderMessages: boolean;
+  angleOffset: number;
+  xOffset: number;
 }
 
 const MIN_PAN_FOR_ACTION = 100;
@@ -42,10 +44,6 @@ const WINDOW_WIDTH = Dimensions.get('window').width + TOOLBAR_OFFSET;
 enum CurrentAction {
   None = 0,
   Swiping,
-}
-
-function randomSign(): number {
-  return Math.random() > 0.5 ? 1 : -1;
 }
 
 export function Card(props: CardProps): JSX.Element {
@@ -155,8 +153,7 @@ export function Card(props: CardProps): JSX.Element {
     ]);
   }
 
-  const [xOffset] = useState(4 * randomSign() * Math.random());
-  const panX = Animated.useValue(0 + xOffset);
+  const panX = Animated.useValue(0 + props.xOffset);
   const velocityX = Animated.useValue(0);
   const panState = Animated.useValue(State.UNDETERMINED);
   const [clock] = useState(new Clock());
@@ -177,11 +174,6 @@ export function Card(props: CardProps): JSX.Element {
     },
   );
 
-  // Don't rotate the front card.
-  const [angleOffset] = useState(
-    props.preventRenderMessages ? randomSign() * Math.random() : 0,
-  );
-
   const style = StyleSheet.create({
     // Have the card's drag area be the full size of the screen so that the user
     // can't drag the card behind the one on top by grabbing the edge that's
@@ -197,7 +189,7 @@ export function Card(props: CardProps): JSX.Element {
 
       transform: [
         {
-          rotate: `${angleOffset}deg`,
+          rotate: `${props.angleOffset}deg`,
         },
         // @ts-expect-error StyleSheet.create type doesn't like getting an
         // Animated.Node<number> instead of a plain number.
