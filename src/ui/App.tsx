@@ -102,10 +102,32 @@ function App(): JSX.Element {
   // network.
   const numCardsRendered = 10;
 
+  function hashCode(str: string): number {
+    let hash = 0,
+      i,
+      chr;
+    for (i = 0; i < str.length; i++) {
+      chr = str.charCodeAt(i);
+      // eslint-disable-next-line no-bitwise
+      hash = (hash << 5) - hash + chr;
+      // eslint-disable-next-line no-bitwise
+      hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+  }
+
+  function LCG(a: number): number {
+    // eslint-disable-next-line no-bitwise
+    a = Math.imul(48271, a) | 0 % 2147483647;
+    // eslint-disable-next-line no-bitwise
+    return (a & 2147483647) / 2147483648;
+  }
+
   const cards = threadListState.threads.slice(0, numCardsRendered).map((thread, index) => {
-    const xOffset = 8 * Math.random() - 0.5;
-    const angleOffset = 2 * Math.random() - 0.5;
     const threadId = thread.id();
+    const rand = LCG(hashCode(threadId));
+    const xOffset = 8 * rand - 0.5;
+    const angleOffset = 2 * rand - 0.5;
     return (
       <Card
         key={threadId}
