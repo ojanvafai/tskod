@@ -102,22 +102,21 @@ function App(): JSX.Element {
   // network.
   const numCardsRendered = 10;
 
-  const [cardRotations, setCardRotations] = useState(new Map<string, number>());
-  const [cardOffsets, setCardOffsets] = useState(new Map<string, number>());
+  const [cardRotations, setCardRotations] = useState(new WeakMap<Thread, number>());
+  const [cardOffsets, setCardOffsets] = useState(new WeakMap<Thread, number>());
 
   // Returns [rotation, offset]
   function getCardPostionForThread(thread: Thread): number[] {
-    const threadId = thread.id();
-    let rotation = cardRotations.get(threadId);
+    let rotation = cardRotations.get(thread);
     if (!rotation) {
       rotation = 2 * (Math.random() - 0.5);
-      setCardRotations(cardRotations.set(threadId, rotation));
+      setCardRotations(cardRotations.set(thread, rotation));
     }
 
-    let offset = cardOffsets.get(threadId);
+    let offset = cardOffsets.get(thread);
     if (!offset) {
       offset = 8 * (Math.random() - 0.5);
-      setCardOffsets(cardOffsets.set(threadId, offset));
+      setCardOffsets(cardOffsets.set(thread, offset));
     }
 
     return [rotation, offset];
@@ -125,7 +124,11 @@ function App(): JSX.Element {
 
   const cards = threadListState.threads.slice(0, numCardsRendered).map((thread, index) => {
     const threadId = thread.id();
-    const [angleOffset, xOffset] = getCardPostionForThread(thread);
+    let [angleOffset, xOffset] = getCardPostionForThread(thread);
+    if (index < 2) {
+      angleOffset = 0;
+      xOffset = 0;
+    }
     return (
       <Card
         key={threadId}
