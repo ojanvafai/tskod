@@ -102,14 +102,41 @@ function App(): JSX.Element {
   // network.
   const numCardsRendered = 10;
 
+  const [cardRotations, setCardRotations] = useState(new WeakMap<Thread, number>());
+  const [cardOffsets, setCardOffsets] = useState(new WeakMap<Thread, number>());
+
+  // Returns [rotation, offset]
+  function getCardPostionForThread(thread: Thread): number[] {
+    let rotation = cardRotations.get(thread);
+    if (!rotation) {
+      rotation = 2 * (Math.random() - 0.5);
+      setCardRotations(cardRotations.set(thread, rotation));
+    }
+
+    let offset = cardOffsets.get(thread);
+    if (!offset) {
+      offset = 8 * (Math.random() - 0.5);
+      setCardOffsets(cardOffsets.set(thread, offset));
+    }
+
+    return [rotation, offset];
+  }
+
   const cards = threadListState.threads.slice(0, numCardsRendered).map((thread, index) => {
     const threadId = thread.id();
+    let [angleOffset, xOffset] = getCardPostionForThread(thread);
+    if (index < 2) {
+      angleOffset = 0;
+      xOffset = 0;
+    }
     return (
       <Card
         key={threadId}
         thread={thread}
         onCardOffScreen={updateThreadListState}
         preventRenderMessages={index > 2}
+        xOffset={xOffset}
+        angleOffset={angleOffset}
       />
     );
   });
@@ -120,7 +147,8 @@ function App(): JSX.Element {
   cards.reverse();
 
   const style = StyleSheet.create({
-    view: cards.length ? { flex: 1 } : { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    view: { flex: 1, backgroundColor: '#eee' },
+    viewWithoutCards: cards.length ? {} : { justifyContent: 'center', alignItems: 'center' },
   });
 
   return (
@@ -128,7 +156,7 @@ function App(): JSX.Element {
       <StatusBar barStyle='dark-content' />
       <SafeAreaView style={style.view}>
         {/* Wrapper View prevents absolutely positioned Cards from escaping the safe area. */}
-        <View style={style.view}>
+        <View style={[style.view, style.viewWithoutCards]}>
           {cards.length ? (
             cards
           ) : (
