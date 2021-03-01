@@ -102,32 +102,30 @@ function App(): JSX.Element {
   // network.
   const numCardsRendered = 10;
 
-  function hashCode(str: string): number {
-    let hash = 0,
-      i,
-      chr;
-    for (i = 0; i < str.length; i++) {
-      chr = str.charCodeAt(i);
-      // eslint-disable-next-line no-bitwise
-      hash = (hash << 5) - hash + chr;
-      // eslint-disable-next-line no-bitwise
-      hash |= 0; // Convert to 32bit integer
-    }
-    return hash;
-  }
+  const [cardRotations, setCardRotations] = useState(new Map<string, number>());
+  const [cardOffsets, setCardOffsets] = useState(new Map<string, number>());
 
-  function LCG(a: number): number {
-    // eslint-disable-next-line no-bitwise
-    a = Math.imul(48271, a) | 0 % 2147483647;
-    // eslint-disable-next-line no-bitwise
-    return (a & 2147483647) / 2147483648;
+  // Returns [rotation, offset]
+  function getCardPostionForThread(thread: Thread): number[] {
+    const threadId = thread.id();
+    let rotation = cardRotations.get(threadId);
+    if (!rotation) {
+      rotation = 2 * (Math.random() - 0.5);
+      setCardRotations(cardRotations.set(threadId, rotation));
+    }
+
+    let offset = cardOffsets.get(threadId);
+    if (!offset) {
+      offset = 8 * (Math.random() - 0.5);
+      setCardOffsets(cardOffsets.set(threadId, offset));
+    }
+
+    return [rotation, offset];
   }
 
   const cards = threadListState.threads.slice(0, numCardsRendered).map((thread, index) => {
     const threadId = thread.id();
-    const rand = LCG(hashCode(threadId));
-    const xOffset = 8 * rand - 0.5;
-    const angleOffset = 2 * rand - 0.5;
+    const [angleOffset, xOffset] = getCardPostionForThread(thread);
     return (
       <Card
         key={threadId}
@@ -145,12 +143,9 @@ function App(): JSX.Element {
   // of the stack.
   cards.reverse();
 
-  const noCardsStyleOrEmpty = StyleSheet.create({
-    view: cards.length ? {} : { justifyContent: 'center', alignItems: 'center' },
-  });
-
   const style = StyleSheet.create({
     view: { flex: 1, backgroundColor: '#eee' },
+    viewWithoutCards: cards.length ? {} : { justifyContent: 'center', alignItems: 'center' },
   });
 
   return (
@@ -158,7 +153,7 @@ function App(): JSX.Element {
       <StatusBar barStyle='dark-content' />
       <SafeAreaView style={style.view}>
         {/* Wrapper View prevents absolutely positioned Cards from escaping the safe area. */}
-        <View style={[style.view, noCardsStyleOrEmpty.view]}>
+        <View style={[style.view, style.viewWithoutCards]}>
           {cards.length ? (
             cards
           ) : (
