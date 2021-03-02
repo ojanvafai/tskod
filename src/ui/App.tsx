@@ -5,6 +5,7 @@ import { Card } from './Card';
 import { fetchThreads, modifyThread, login } from '../Gapi';
 import { Thread } from '../Thread';
 import { LabelName, Labels } from '../Labels';
+import { defined } from '../Base';
 
 interface ThreadsState {
   threads: Thread[];
@@ -102,14 +103,45 @@ function App(): JSX.Element {
   // network.
   const numCardsRendered = 10;
 
-  const cards = threadListState.threads.slice(0, numCardsRendered).map((thread, index) => {
+  interface CardPosition {
+    rotation: number;
+    offset: number;
+  }
+
+  const [cardPositions, setCardPositions] = useState(new Map<Thread, CardPosition>());
+
+  function updateCardPositionsForThreads(threads: Thread[]): void {
+    const positions = new Map<Thread, CardPosition>();
+    for (const thread of threads) {
+      let position = cardPositions.get(thread);
+      if (!position) {
+        position = {
+          rotation: 2 * (Math.random() - 0.5),
+          offset: 8 * (Math.random() - 0.5),
+        };
+      }
+    }
+    setCardPositions(positions);
+  }
+
+  const renderedThreads = threadListState.threads.slice(0, numCardsRendered);
+  updateCardPositionsForThreads(renderedThreads);
+
+  const cards = renderedThreads.map((thread, index) => {
     const threadId = thread.id();
+    let { rotation, offset } = defined(cardPositions.get(thread));
+    if (index < 2) {
+      rotation = 0;
+      offset = 0;
+    }
     return (
       <Card
         key={threadId}
         thread={thread}
         onCardOffScreen={updateThreadListState}
         preventRenderMessages={index > 2}
+        xOffset={offset}
+        angleOffset={rotation}
       />
     );
   });
