@@ -5,10 +5,15 @@ import { Card } from './Card';
 import { fetchThreads, modifyThread, login } from '../Gapi';
 import { Thread } from '../Thread';
 import { LabelName, Labels } from '../Labels';
-import { defined } from '../Base';
+
+interface CardPosition {
+  rotation: number;
+  offset: number;
+}
 
 interface ThreadsState {
   threads: Thread[];
+  cardPositions: Map<string, CardPosition>;
 }
 
 export interface UpdateThreadListAction {
@@ -23,20 +28,45 @@ enum LoadState {
 }
 
 function App(): JSX.Element {
+  // TODO: Once we take message fetching out of Card creation, only prerender
+  // one card below the most recently swiped card. Until then, render more cards
+  // and prevent rendering their messages to avoid getting stalled on slow
+  // network.
+
+  const updateCardPositionsForThreads = function (
+    cardPositions: Map<string, CardPosition>,
+    threads: Thread[],
+  ): Map<string, CardPosition> {
+    const newCardPositions = new Map<string, CardPosition>();
+    for (const thread of threads) {
+      let position = cardPositions.get(thread.id());
+      if (!position) {
+        position = {
+          rotation: 2 * (Math.random() - 0.5),
+          offset: 8 * (Math.random() - 0.5),
+        };
+      }
+      newCardPositions.set(thread.id(), position);
+    }
+    return newCardPositions;
+  };
+
   function reducer(state: ThreadsState, action: UpdateThreadListAction): ThreadsState {
+    const result: ThreadsState = { threads: [], cardPositions: new Map<string, CardPosition>() };
     if (action.removeThreadId) {
-      return {
-        threads: state.threads.filter((x) => x.id() !== action.removeThreadId),
-      };
+      result.threads = state.threads.filter((x) => x.id() !== action.removeThreadId);
+    } else if (action.threads) {
+      result.threads = action.threads;
+    } else {
+      throw new Error('Invalid thread reducer action.');
     }
-    if (action.threads) {
-      return { threads: action.threads };
-    }
-    throw new Error('Invalid thread reducer action.');
+    result.cardPositions = updateCardPositionsForThreads(state.cardPositions, result.threads);
+    return result;
   }
 
   const [threadListState, updateThreadListState] = useReducer(reducer, {
     threads: [],
+    cardPositions: new Map<string, CardPosition>(),
   });
 
   const [loadingThreads, setLoadingThreads] = useState(LoadState.initial);
@@ -97,39 +127,15 @@ function App(): JSX.Element {
     })();
   }, []);
 
-  // TODO: Once we take message fetching out of Card creation, only prerender
-  // one card below the most recently swiped card. Until then, render more cards
-  // and prevent rendering their messages to avoid getting stalled on slow
-  // network.
   const numCardsRendered = 10;
-
-  interface CardPosition {
-    rotation: number;
-    offset: number;
-  }
-
-  const [cardPositions, setCardPositions] = useState(new Map<Thread, CardPosition>());
-
-  function updateCardPositionsForThreads(threads: Thread[]): void {
-    const positions = new Map<Thread, CardPosition>();
-    for (const thread of threads) {
-      let position = cardPositions.get(thread);
-      if (!position) {
-        position = {
-          rotation: 2 * (Math.random() - 0.5),
-          offset: 8 * (Math.random() - 0.5),
-        };
-      }
-    }
-    setCardPositions(positions);
-  }
-
   const renderedThreads = threadListState.threads.slice(0, numCardsRendered);
-  updateCardPositionsForThreads(renderedThreads);
 
   const cards = renderedThreads.map((thread, index) => {
     const threadId = thread.id();
-    let { rotation, offset } = defined(cardPositions.get(thread));
+    let { rotation, offset } = threadListState.cardPositions.get(thread.id()) ?? {
+      rotation: 0,
+      offset: 0,
+    };
     if (index < 2) {
       rotation = 0;
       offset = 0;
@@ -152,7 +158,8 @@ function App(): JSX.Element {
   cards.reverse();
 
   const style = StyleSheet.create({
-    view: cards.length ? { flex: 1 } : { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    view: { flex: 1, backgroundColor: '#eee' },
+    viewWithoutCards: cards.length ? {} : { justifyContent: 'center', alignItems: 'center' },
   });
 
   return (
@@ -160,7 +167,7 @@ function App(): JSX.Element {
       <StatusBar barStyle='dark-content' />
       <SafeAreaView style={style.view}>
         {/* Wrapper View prevents absolutely positioned Cards from escaping the safe area. */}
-        <View style={style.view}>
+        <View style={[style.view, style.viewWithoutCards]}>
           {cards.length ? (
             cards
           ) : (
