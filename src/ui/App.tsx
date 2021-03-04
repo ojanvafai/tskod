@@ -12,7 +12,7 @@ interface ThreadsState {
 
 export interface UpdateThreadListAction {
   removeThreadId?: string;
-  threads?: Thread[];
+  thread?: Thread;
 }
 
 enum LoadState {
@@ -28,8 +28,8 @@ function App(): JSX.Element {
         threads: state.threads.filter((x) => x.id() !== action.removeThreadId),
       };
     }
-    if (action.threads) {
-      return { threads: action.threads };
+    if (action.thread) {
+      return { threads: [...state.threads, action.thread] };
     }
     throw new Error('Invalid thread reducer action.');
   }
@@ -69,7 +69,6 @@ function App(): JSX.Element {
     }
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async (): Promise<void> => {
-      const threads: Thread[] = [];
       // TODO - convert to `for await`. See https://github.com/facebook/react-native/issues/27432
       const threadGenerator = fetchThreadsWithMetadata();
       while (true) {
@@ -78,10 +77,7 @@ function App(): JSX.Element {
           break;
         }
         const thread = generatorResult.value;
-
-        threads.push(thread);
-
-        updateThreadListState({ threads });
+        updateThreadListState({ thread });
       }
       setLoadingThreads(LoadState.loaded);
     })();
