@@ -6,8 +6,14 @@ import { fetchThreads, modifyThread, login } from '../Gapi';
 import { Thread } from '../Thread';
 import { LabelName, Labels } from '../Labels';
 
+interface CardPosition {
+  rotation: number;
+  offset: number;
+}
+
 interface ThreadsState {
   threads: Thread[];
+  cardPositions: Map<string, CardPosition>;
 }
 
 export interface UpdateThreadListAction {
@@ -22,20 +28,45 @@ enum LoadState {
 }
 
 function App(): JSX.Element {
+  // TODO: Once we take message fetching out of Card creation, only prerender
+  // one card below the most recently swiped card. Until then, render more cards
+  // and prevent rendering their messages to avoid getting stalled on slow
+  // network.
+
+  const updateCardPositionsForThreads = function (
+    cardPositions: Map<string, CardPosition>,
+    threads: Thread[],
+  ): Map<string, CardPosition> {
+    const newCardPositions = new Map<string, CardPosition>();
+    for (const thread of threads) {
+      let position = cardPositions.get(thread.id());
+      if (!position) {
+        position = {
+          rotation: 2 * (Math.random() - 0.5),
+          offset: 8 * (Math.random() - 0.5),
+        };
+      }
+      newCardPositions.set(thread.id(), position);
+    }
+    return newCardPositions;
+  };
+
   function reducer(state: ThreadsState, action: UpdateThreadListAction): ThreadsState {
+    const result: ThreadsState = { threads: [], cardPositions: new Map<string, CardPosition>() };
     if (action.removeThreadId) {
-      return {
-        threads: state.threads.filter((x) => x.id() !== action.removeThreadId),
-      };
+      result.threads = state.threads.filter((x) => x.id() !== action.removeThreadId);
+    } else if (action.threads) {
+      result.threads = action.threads;
+    } else {
+      throw new Error('Invalid thread reducer action.');
     }
-    if (action.threads) {
-      return { threads: action.threads };
-    }
-    throw new Error('Invalid thread reducer action.');
+    result.cardPositions = updateCardPositionsForThreads(state.cardPositions, result.threads);
+    return result;
   }
 
   const [threadListState, updateThreadListState] = useReducer(reducer, {
     threads: [],
+    cardPositions: new Map<string, CardPosition>(),
   });
 
   const [loadingThreads, setLoadingThreads] = useState(LoadState.initial);
@@ -96,38 +127,18 @@ function App(): JSX.Element {
     })();
   }, []);
 
-  // TODO: Once we take message fetching out of Card creation, only prerender
-  // one card below the most recently swiped card. Until then, render more cards
-  // and prevent rendering their messages to avoid getting stalled on slow
-  // network.
   const numCardsRendered = 10;
+  const renderedThreads = threadListState.threads.slice(0, numCardsRendered);
 
-  const [cardRotations, setCardRotations] = useState(new WeakMap<Thread, number>());
-  const [cardOffsets, setCardOffsets] = useState(new WeakMap<Thread, number>());
-
-  // Returns [rotation, offset]
-  function getCardPostionForThread(thread: Thread): number[] {
-    let rotation = cardRotations.get(thread);
-    if (!rotation) {
-      rotation = 2 * (Math.random() - 0.5);
-      setCardRotations(cardRotations.set(thread, rotation));
-    }
-
-    let offset = cardOffsets.get(thread);
-    if (!offset) {
-      offset = 8 * (Math.random() - 0.5);
-      setCardOffsets(cardOffsets.set(thread, offset));
-    }
-
-    return [rotation, offset];
-  }
-
-  const cards = threadListState.threads.slice(0, numCardsRendered).map((thread, index) => {
+  const cards = renderedThreads.map((thread, index) => {
     const threadId = thread.id();
-    let [angleOffset, xOffset] = getCardPostionForThread(thread);
+    let { rotation, offset } = threadListState.cardPositions.get(thread.id()) ?? {
+      rotation: 0,
+      offset: 0,
+    };
     if (index < 2) {
-      angleOffset = 0;
-      xOffset = 0;
+      rotation = 0;
+      offset = 0;
     }
     return (
       <Card
@@ -135,8 +146,8 @@ function App(): JSX.Element {
         thread={thread}
         onCardOffScreen={updateThreadListState}
         preventRenderMessages={index > 2}
-        xOffset={xOffset}
-        angleOffset={angleOffset}
+        xOffset={offset}
+        angleOffset={rotation}
       />
     );
   });
