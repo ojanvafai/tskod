@@ -1,25 +1,16 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, Dimensions, View } from 'react-native';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import { StyleSheet, Text, Dimensions, View, Animated } from 'react-native';
+
+import {
+  GestureHandlerGestureEventNativeEvent,
+  GestureHandlerStateChangeEvent,
+  PanGestureHandler,
+  PanGestureHandlerEventExtra,
+  State,
+} from 'react-native-gesture-handler';
+
 import { Thread } from '../Thread';
-import Animated, {
-  cond,
-  eq,
-  useValue,
-  block,
-  or,
-  startClock,
-  stopClock,
-  clockRunning,
-  set,
-  Clock,
-  multiply,
-  divide,
-  abs,
-  greaterThan,
-  call,
-  not,
-} from 'react-native-reanimated';
+
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { assert } from '../Base';
 
@@ -28,6 +19,7 @@ import { LabelName, Labels } from '../Labels';
 import { Message } from '../Message';
 import { UpdateThreadListAction } from './App';
 import { MessageComponent } from './MessageComponent';
+import { assertNotReached } from '../Base';
 
 interface CardProps {
   thread: Thread;
@@ -39,16 +31,15 @@ interface CardProps {
 
 const MIN_PAN_FOR_ACTION = 100;
 const TOOLBAR_OFFSET = 75;
-const WINDOW_WIDTH = Dimensions.get('window').width + TOOLBAR_OFFSET;
+const SPRING_CONFIG = { tension: 20, friction: 7 };
 
-enum CurrentAction {
-  None = 0,
-  Swiping,
-}
+const WINDOW_WIDTH = Dimensions.get('window').width + TOOLBAR_OFFSET;
 
 export function Card(props: CardProps): JSX.Element {
   const messages: Message[] = props.thread.messages();
   const firstAndLastMessages = props.thread.firstAndLastMessages() ?? [];
+
+  const pan = new Animated.ValueXY();
 
   // Take the swipe action immediately when the user lifts their finger in
   // parallel with swiping the card offscreen.
@@ -75,104 +66,50 @@ export function Card(props: CardProps): JSX.Element {
     await handleSwipe([keep.getId(), emptyDaily.getId()], []);
   }
 
-  function useAnimation(
-    panX: Animated.Value<number>,
-    velX: Animated.Adaptable<number>,
-    clock: Animated.Clock,
-    dragState: Animated.Value<number>,
-  ): Animated.Node<number> {
-    const currentAction = Animated.useValue(CurrentAction.None);
-
-    const springState = {
-      finished: useValue(0),
-      velocity: useValue(0),
-      position: useValue(0),
-      time: useValue(0),
-    };
-
-    const config = {
-      toValue: new Animated.Value(0),
-      damping: 10,
-      mass: 0.4,
-      stiffness: 50,
-      overshootClamping: false,
-      restSpeedThreshold: 0.001,
-      restDisplacementThreshold: 0.001,
-    };
-
-    return block([
-      cond(or(eq(dragState, State.BEGAN), eq(dragState, State.ACTIVE)), [
-        // Dragging.
-        set(currentAction, CurrentAction.None),
-        stopClock(clock),
-      ]),
-      cond(
-        eq(dragState, State.END),
-        // Releasing.
-        [
-          [
-            cond(
-              greaterThan(abs(panX), MIN_PAN_FOR_ACTION),
-              // Swiping.
-              [
-                set(config.toValue, multiply(divide(panX, abs(panX)), WINDOW_WIDTH)),
-                [set(currentAction, CurrentAction.Swiping)],
-                cond(greaterThan(panX, 0), call([], swipeRight), call([], swipeLeft)),
-              ],
-              // Releasing without a swipe.
-              [set(config.toValue, 0)],
-            ),
-            cond(
-              not(clockRunning(clock)),
-              // Start spring animation.
-              [
-                set(springState.finished, 0),
-                set(springState.time, 0),
-                set(springState.position, panX),
-                set(springState.velocity, velX),
-                startClock(clock),
-              ],
-            ),
-          ],
-          // TODO: This animation takes ~1.5s to finish after the card is
-          // already offscreen. Figure out how to abort early rather than
-          // waiting for the spring to settle.
-          cond(springState.finished, [
-            // Finished spring animation.
-            cond(eq(currentAction, CurrentAction.Swiping), [
-              call([], () => props.onCardOffScreen({ removeThreadId: props.thread.id() })),
-            ]),
-            set(currentAction, CurrentAction.None),
-            stopClock(clock),
-          ]),
-          Animated.spring(clock, springState, config),
-          springState.position,
-        ],
-        [panX],
-      ),
-    ]);
-  }
-
-  const panX = Animated.useValue(0 + props.xOffset);
-  const velocityX = Animated.useValue(0);
-  const panState = Animated.useValue(State.UNDETERMINED);
-  const [clock] = useState(new Clock());
-  const panDrawX = useAnimation(panX, velocityX, clock, panState);
-
   const handleGesture = Animated.event(
-    [
-      {
-        nativeEvent: {
-          translationX: panX,
-          velocityX: velocityX,
-          state: panState,
-        },
-      },
-    ],
+    [{ nativeEvent: { translationX: pan.x, translationY: pan.y } }],
     {
       useNativeDriver: true,
     },
   );
+
+  const handleGestureStateChange = async (evt: GestureHandlerStateChangeEvent): Promise<void> => {
+    const nativeEvent = (evt.nativeEvent as unknown) as GestureHandlerGestureEventNativeEvent &
+      PanGestureHandlerEventExtra;
+    if (evt.nativeEvent.state === State.END) {
+      if (Math.abs(nativeEvent.translationX) < MIN_PAN_FOR_ACTION) {
+        Animated.spring(pan, {
+          ...SPRING_CONFIG,
+          toValue: { x: 0, y: 0 },
+          velocity: nativeEvent.velocityX,
+          useNativeDriver: true,
+        }).start();
+      } else {
+        Animated.spring(pan, {
+          ...SPRING_CONFIG,
+          toValue: {
+            x: Math.sign(nativeEvent.translationX) * WINDOW_WIDTH,
+            y: 0,
+          },
+          velocity: nativeEvent.velocityX,
+          useNativeDriver: true,
+        });
+        if (nativeEvent.translationX < -MIN_PAN_FOR_ACTION) {
+          if (!messages.length) {
+            // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
+            assertNotReached('Have not loaded message data yet.');
+          }
+          await swipeLeft();
+        } else if (nativeEvent.translationX > MIN_PAN_FOR_ACTION) {
+          if (!messages.length) {
+            // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
+            assertNotReached('Have not loaded message data yet.');
+          }
+          await swipeRight();
+        }
+      }
+    }
+  };
 
   const style = StyleSheet.create({
     // Have the card's drag area be the full size of the screen so that the user
@@ -193,7 +130,7 @@ export function Card(props: CardProps): JSX.Element {
         },
         // @ts-expect-error StyleSheet.create type doesn't like getting an
         // Animated.Node<number> instead of a plain number.
-        { translateX: panDrawX },
+        { translateX: pan.x },
       ],
     },
     visibleCard: {
@@ -281,9 +218,8 @@ export function Card(props: CardProps): JSX.Element {
 
   return (
     <PanGestureHandler
-      enabled={firstAndLastMessages.length > 0}
       onGestureEvent={handleGesture}
-      onHandlerStateChange={handleGesture}
+      onHandlerStateChange={handleGestureStateChange}
     >
       {/* @ts-ignore the type doesn't allow position:absolute...the type seems to be wrong. */}
       <Animated.View style={style.card}>
