@@ -55,10 +55,12 @@ export function Card(props: CardProps): JSX.Element {
   }
 
   async function swipeLeft(): Promise<void> {
+    console.log('SWIPE LEFT');
     await handleSwipe([], ['INBOX']);
   }
 
   async function swipeRight(): Promise<void> {
+    console.log('SWIPE RIGHT');
     const [keep, emptyDaily] = await Promise.all([
       Labels.getOrCreateLabel(LabelName.keep),
       Labels.getOrCreateLabel(LabelName.emptyDaily),
@@ -69,7 +71,7 @@ export function Card(props: CardProps): JSX.Element {
   const handleGesture = Animated.event(
     [{ nativeEvent: { translationX: pan.x, translationY: pan.y } }],
     {
-      useNativeDriver: true,
+      useNativeDriver: false,
     },
   );
 
@@ -82,29 +84,27 @@ export function Card(props: CardProps): JSX.Element {
           ...SPRING_CONFIG,
           toValue: { x: 0, y: 0 },
           velocity: nativeEvent.velocityX,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }).start();
       } else {
+        console.log('SPRING AWAY');
+        console.log(Math.sign(nativeEvent.translationX) * WINDOW_WIDTH);
+        if (!messages.length) {
+          // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
+          assertNotReached('Have not loaded message data yet.');
+        }
         Animated.spring(pan, {
           ...SPRING_CONFIG,
           toValue: {
-            x: Math.sign(nativeEvent.translationX) * WINDOW_WIDTH,
+            x: Math.sign(nativeEvent.translationX) * WINDOW_WIDTH * 1.1,
             y: 0,
           },
           velocity: nativeEvent.velocityX,
-          useNativeDriver: true,
-        });
+          useNativeDriver: false,
+        }).start();
         if (nativeEvent.translationX < -MIN_PAN_FOR_ACTION) {
-          if (!messages.length) {
-            // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
-            assertNotReached('Have not loaded message data yet.');
-          }
           await swipeLeft();
         } else if (nativeEvent.translationX > MIN_PAN_FOR_ACTION) {
-          if (!messages.length) {
-            // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
-            assertNotReached('Have not loaded message data yet.');
-          }
           await swipeRight();
         }
       }
