@@ -68,27 +68,42 @@ export function Card(props: CardProps): JSX.Element {
     await handleSwipe([keep.getId(), emptyDaily.getId()], []);
   }
 
-  const handleGesture = Animated.event(
-    [{ nativeEvent: { translationX: pan.x, translationY: pan.y } }],
-    {
-      useNativeDriver: false,
+  const handleGesture = Animated.event([{ nativeEvent: { translationX: pan.x } }], {
+    useNativeDriver: true,
+    listener: () => {
+      console.log('handling gesture');
     },
-  );
+  });
 
   const handleGestureStateChange = async (evt: GestureHandlerStateChangeEvent): Promise<void> => {
     const nativeEvent = (evt.nativeEvent as unknown) as GestureHandlerGestureEventNativeEvent &
       PanGestureHandlerEventExtra;
     if (evt.nativeEvent.state === State.END) {
       if (Math.abs(nativeEvent.translationX) < MIN_PAN_FOR_ACTION) {
+        console.log('Releasing without action');
+        console.log({
+          ...SPRING_CONFIG,
+          toValue: { x: 0, y: 0 },
+          velocity: nativeEvent.velocityX,
+          useNativeDriver: true,
+        });
         Animated.spring(pan, {
           ...SPRING_CONFIG,
           toValue: { x: 0, y: 0 },
           velocity: nativeEvent.velocityX,
-          useNativeDriver: false,
+          useNativeDriver: true,
         }).start();
       } else {
         console.log('SPRING AWAY');
-        console.log(Math.sign(nativeEvent.translationX) * WINDOW_WIDTH);
+        console.log({
+          ...SPRING_CONFIG,
+          toValue: {
+            x: Math.sign(nativeEvent.translationX) * WINDOW_WIDTH * 1.1,
+            y: 0,
+          },
+          velocity: nativeEvent.velocityX,
+          useNativeDriver: true,
+        });
         if (!messages.length) {
           // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
           assertNotReached('Have not loaded message data yet.');
@@ -100,8 +115,14 @@ export function Card(props: CardProps): JSX.Element {
             y: 0,
           },
           velocity: nativeEvent.velocityX,
-          useNativeDriver: false,
-        }).start();
+          useNativeDriver: true,
+        }).start((finished) => {
+          if (finished) {
+            //setTimeout(() => {
+            props.onCardOffScreen({ removeThreadId: props.thread.id() });
+            //}, 0);
+          }
+        });
         if (nativeEvent.translationX < -MIN_PAN_FOR_ACTION) {
           await swipeLeft();
         } else if (nativeEvent.translationX > MIN_PAN_FOR_ACTION) {
@@ -130,7 +151,7 @@ export function Card(props: CardProps): JSX.Element {
         },
         // @ts-expect-error StyleSheet.create type doesn't like getting an
         // Animated.Node<number> instead of a plain number.
-        { translateX: pan.x },
+        ...pan.getTranslateTransform(),
       ],
     },
     visibleCard: {
