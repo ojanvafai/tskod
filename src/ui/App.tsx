@@ -27,6 +27,105 @@ enum LoadState {
   loaded,
 }
 
+// TODO: Add setaside
+enum PriorityVisibility {
+  visible,
+  hidden,
+}
+
+enum BuiltInAction {
+  archive,
+  moveToPriority,
+}
+
+// If the action value is a string, it's the name of the priority to move to.
+type Action = BuiltInAction | string;
+
+enum TriggerType {
+  deadline,
+  newMessage,
+}
+
+interface DeadlineTrigger {
+  type: TriggerType.deadline;
+  action: Action;
+  allowCustomDeadlines: boolean;
+  deadline?: number;
+}
+
+interface NewMessageTrigger {
+  type: TriggerType.newMessage;
+  action: Action;
+}
+
+interface PriorityConfig {
+  name: string;
+  visibility: PriorityVisibility;
+  triggers?: (DeadlineTrigger | NewMessageTrigger)[];
+}
+
+// OJAN: Prefix all the priority names with tm/ or mk/ as appropriate.
+const priorityConfigList: PriorityConfig[] = [
+  {
+    name: 'Mute',
+    visibility: PriorityVisibility.hidden,
+    triggers: [{ type: TriggerType.newMessage, action: BuiltInAction.archive }],
+  },
+  {
+    name: 'SoftMute/%epoch%',
+    visibility: PriorityVisibility.hidden,
+    triggers: [
+      // OJAN: This needs to maintain the epoch number
+      { type: TriggerType.newMessage, action: 'SoftMuteNewMessages/%epoch%' },
+      { type: TriggerType.deadline, action: BuiltInAction.archive, allowCustomDeadlines: true },
+    ],
+  },
+  {
+    name: 'Stuck',
+    visibility: PriorityVisibility.visible,
+  },
+  {
+    name: 'Stuck/%epoch%',
+    visibility: PriorityVisibility.hidden,
+    triggers: [
+      { type: TriggerType.newMessage, action: 'Stuck' },
+      { type: TriggerType.deadline, action: 'Stuck', allowCustomDeadlines: true },
+    ],
+  },
+  {
+    name: 'mk/priority/Empty-Daily',
+    visibility: PriorityVisibility.hidden,
+    triggers: [
+      // OJAN: This isn't quite right since we want to pick a random sample to mark for retriage
+      { type: TriggerType.deadline, action: 'Retriage', deadline: 2, allowCustomDeadlines: false },
+    ],
+  },
+  {
+    name: 'mk/priority/Urgent',
+    visibility: PriorityVisibility.hidden,
+    triggers: [
+      // OJAN: This isn't quite right since we want to pick a random sample to mark for retriage
+      { type: TriggerType.deadline, action: 'Retriage', deadline: 7, allowCustomDeadlines: false },
+    ],
+  },
+  {
+    name: 'mk/priority/Backlog',
+    visibility: PriorityVisibility.hidden,
+    triggers: [
+      // OJAN: This isn't quite right since we want to pick a random sample to mark for retriage
+      { type: TriggerType.deadline, action: 'Retriage', deadline: 28, allowCustomDeadlines: false },
+    ],
+  },
+];
+
+// Not covered here:
+// bookmark
+// triage later
+// archive-if-no-new-messages, next-lower-priority, and next-higher-priority actions as ergonomic sugar.
+
+console.log(priorityConfigList);
+
+
 function App(): JSX.Element {
   // TODO: Once we take message fetching out of Card creation, only prerender
   // one card below the most recently swiped card. Until then, render more cards
