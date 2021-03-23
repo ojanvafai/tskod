@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { StyleSheet, Text, Dimensions, View, Animated } from 'react-native';
 
 import {
@@ -39,7 +39,7 @@ export function Card(props: CardProps): JSX.Element {
   const messages: Message[] = props.thread.messages();
   const firstAndLastMessages = props.thread.firstAndLastMessages() ?? [];
 
-  const pan = new Animated.ValueXY();
+  const pan = useRef(new Animated.ValueXY()).current;
 
   // Take the swipe action immediately when the user lifts their finger in
   // parallel with swiping the card offscreen.
@@ -55,12 +55,10 @@ export function Card(props: CardProps): JSX.Element {
   }
 
   async function swipeLeft(): Promise<void> {
-    console.log('SWIPE LEFT');
     await handleSwipe([], ['INBOX']);
   }
 
   async function swipeRight(): Promise<void> {
-    console.log('SWIPE RIGHT');
     const [keep, emptyDaily] = await Promise.all([
       Labels.getOrCreateLabel(LabelName.keep),
       Labels.getOrCreateLabel(LabelName.emptyDaily),
@@ -70,9 +68,6 @@ export function Card(props: CardProps): JSX.Element {
 
   const handleGesture = Animated.event([{ nativeEvent: { translationX: pan.x } }], {
     useNativeDriver: true,
-    listener: () => {
-      console.log('handling gesture');
-    },
   });
 
   const handleGestureStateChange = async (evt: GestureHandlerStateChangeEvent): Promise<void> => {
@@ -80,13 +75,6 @@ export function Card(props: CardProps): JSX.Element {
       PanGestureHandlerEventExtra;
     if (evt.nativeEvent.state === State.END) {
       if (Math.abs(nativeEvent.translationX) < MIN_PAN_FOR_ACTION) {
-        console.log('Releasing without action');
-        console.log({
-          ...SPRING_CONFIG,
-          toValue: { x: 0, y: 0 },
-          velocity: nativeEvent.velocityX,
-          useNativeDriver: true,
-        });
         Animated.spring(pan, {
           ...SPRING_CONFIG,
           toValue: { x: 0, y: 0 },
@@ -94,16 +82,6 @@ export function Card(props: CardProps): JSX.Element {
           useNativeDriver: true,
         }).start();
       } else {
-        console.log('SPRING AWAY');
-        console.log({
-          ...SPRING_CONFIG,
-          toValue: {
-            x: Math.sign(nativeEvent.translationX) * WINDOW_WIDTH * 1.1,
-            y: 0,
-          },
-          velocity: nativeEvent.velocityX,
-          useNativeDriver: true,
-        });
         if (!messages.length) {
           // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
           assertNotReached('Have not loaded message data yet.');
@@ -118,9 +96,7 @@ export function Card(props: CardProps): JSX.Element {
           useNativeDriver: true,
         }).start((finished) => {
           if (finished) {
-            //setTimeout(() => {
             props.onCardOffScreen({ removeThreadId: props.thread.id() });
-            //}, 0);
           }
         });
         if (nativeEvent.translationX < -MIN_PAN_FOR_ACTION) {
