@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 const htmlHeader =
-  '<meta name="viewport" content="width=device-width, initial-scale=1"><style>body, html { margin: 0; pointer-events: none; }</style>';
+  '<meta name="viewport" content="width=device-width, initial-scale=1"><style>body, html { margin: 0; pointer-events: none; user-select: none}</style>';
 
 const style = StyleSheet.create({
   header: {
