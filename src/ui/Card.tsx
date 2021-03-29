@@ -19,7 +19,6 @@ import { LabelName, Labels } from '../Labels';
 import { Message } from '../Message';
 import { UpdateThreadListAction } from './App';
 import { MessageComponent } from './MessageComponent';
-import { assertNotReached } from '../Base';
 
 interface CardProps {
   thread: Thread;
@@ -82,10 +81,9 @@ export function Card(props: CardProps): JSX.Element {
           useNativeDriver: true,
         }).start();
       } else {
-        if (!messages.length) {
-          // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
-          assertNotReached('Have not loaded message data yet.');
-        }
+        // TODO: Make it so that the UI isn't swipeable until we've loaded message data.
+        assert(messages.length, 'Have not loaded message data yet.');
+
         Animated.spring(pan, {
           ...SPRING_CONFIG,
           toValue: {
